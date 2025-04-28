@@ -4,6 +4,7 @@ import { Icon } from 'leaflet';
 import styled from 'styled-components';
 import FilterPanel from './FilterPanel';
 import { useNavigate } from 'react-router-dom';
+import useWindowSize from '../../hooks/useWindowSize'; // Importa l'hook personalizzato
 
 const MapWrapper = styled.div`
   height: 100vh;
@@ -30,7 +31,6 @@ const TopControlsContainer = styled.div`
   pointer-events: none;
 `;
 
-// Modifichiamo il LogoOverlay per supportare due diversi loghi
 const LogoOverlay = styled.div`
   margin-right: 20px;
   pointer-events: auto;
@@ -62,7 +62,7 @@ const SearchBar = styled.div`
     display: flex;
   }
   
-  input {
+    input {
     padding: 8px 12px;
     border-radius: 20px;
     border: 1px solid #e0e0e0;
@@ -71,7 +71,11 @@ const SearchBar = styled.div`
     font-size: 14px;
     
     @media (max-width: 768px) {
-      width: calc(100vw - 120px);
+      width: ${props => props.isSearchOpen ? 'calc(100vw - 120px)' : '0'};
+      padding: ${props => props.isSearchOpen ? '8px 12px' : '0'};
+      border: ${props => props.isSearchOpen ? '1px solid #e0e0e0' : 'none'};
+      opacity: ${props => props.isSearchOpen ? '1' : '0'};
+      transition: all 0.3s ease;
     }
   }
   
@@ -88,6 +92,27 @@ const SearchBar = styled.div`
     align-items: center;
     justify-content: center;
     font-size: 16px;
+  }
+`;
+
+const MobileSearchButton = styled.button`
+  display: none;
+  
+  @media (max-width: 768px) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+    margin-right: 5px;
+    font-size: 16px;
+    z-index: 1001;
+    pointer-events: auto;
   }
 `;
 
@@ -111,15 +136,33 @@ const EventMap = ({ events = [], onSearch }) => {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [filteredEvents, setFilteredEvents] = useState(events);
   const [mapCenter, setMapCenter] = useState([44.1155, 8.9442]); // Centro della Liguria
+  const [isSearchOpen, setIsSearchOpen] = useState(false); // Nuovo stato per la barra di ricerca mobile
   const navigate = useNavigate();
+  const { width } = useWindowSize(); // Usa l'hook personalizzato
+  const isMobile = width <= 768;
   
   const defaultZoom = 9;
+
+  // Chiudi la barra di ricerca quando si passa alla visualizzazione desktop
+  useEffect(() => {
+    if (!isMobile && isSearchOpen) {
+      setIsSearchOpen(false);
+    }
+  }, [isMobile, isSearchOpen]);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
       onSearch && onSearch(searchQuery);
+      // Chiudere la barra di ricerca mobile dopo la ricerca
+      if (isMobile) {
+        setIsSearchOpen(false);
+      }
     }
+  };
+
+  const toggleMobileSearch = () => {
+    setIsSearchOpen(!isSearchOpen);
   };
 
   const handleApplyFilters = (filters) => {
@@ -158,43 +201,62 @@ const EventMap = ({ events = [], onSearch }) => {
 
   return (
     <MapWrapper>
-      {/* Sostituiamo i controlli originali con il nuovo TopControlsContainer */}
       <TopControlsContainer>
-  <SearchBar>
-    <form onSubmit={handleSearchSubmit}>
-      <input 
-        type="text" 
-        placeholder="Cerca eventi o luoghi..." 
-        value={searchQuery}
-        onChange={(e) => setSearchQuery(e.target.value)}
-      />
-      <button type="submit" title="Cerca">🔍</button>
-    </form>
-    <button 
-      onClick={() => setIsFilterOpen(!isFilterOpen)} 
-      title="Filtri"
-      style={{ marginLeft: '5px' }}
-    >
-      ⚙️
-    </button>
-  </SearchBar>
-  
-  <LogoOverlay>
-    {/* Logo per desktop */}
-    <img 
-      src="/logo-finday.png" 
-      alt="Finday Logo" 
-      className="desktop-logo" 
-    />
-    
-    {/* Logo per mobile - salva l'immagine che mi hai mandato come "logo-finday-mobile.png" */}
-    <img 
-      src="/logo-finday-mobile.png" 
-      alt="Finday Logo" 
-      className="mobile-logo" 
-    />
-  </LogoOverlay>
-</TopControlsContainer>
+        <div style={{ display: 'flex', alignItems: 'center', pointerEvents: 'auto' }}>
+          {/* Pulsante per aprire/chiudere la ricerca su mobile */}
+          {isMobile && (
+            <MobileSearchButton 
+              onClick={toggleMobileSearch}
+              title={isSearchOpen ? "Chiudi ricerca" : "Apri ricerca"}
+            >
+              {isSearchOpen ? "✕" : "🔍"}
+            </MobileSearchButton>
+          )}
+          
+          <SearchBar isSearchOpen={isSearchOpen}>
+            <form onSubmit={handleSearchSubmit}>
+              <input 
+                type="text" 
+                placeholder="Cerca eventi o luoghi..." 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              <button 
+                type="submit" 
+                title="Cerca"
+                style={{ 
+                  display: isMobile && !isSearchOpen ? 'none' : 'flex' 
+                }}
+              >
+                🔍
+              </button>
+            </form>
+            <button 
+              onClick={() => setIsFilterOpen(!isFilterOpen)} 
+              title="Filtri"
+              style={{ 
+                marginLeft: '5px',
+                display: isMobile && isSearchOpen ? 'none' : 'flex'
+              }}
+            >
+              ⚙️
+            </button>
+          </SearchBar>
+        </div>
+        
+        <LogoOverlay>
+          <img 
+            src="/logo-finday.png" 
+            alt="Finday Logo" 
+            className="desktop-logo" 
+          />
+          <img 
+            src="/logo-finday-mobile.png" 
+            alt="Finday Logo" 
+            className="mobile-logo" 
+          />
+        </LogoOverlay>
+      </TopControlsContainer>
       
       <FilterPanel 
         isOpen={isFilterOpen}
@@ -206,14 +268,12 @@ const EventMap = ({ events = [], onSearch }) => {
         center={mapCenter} 
         zoom={defaultZoom} 
         style={{ height: '100%', width: '100%' }}
-        zoomControl={false} // Disabilita i controlli zoom standard
+        zoomControl={false}
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        
-        {/* Controlli zoom verranno riposizionati tramite CSS in GlobalStyles */}
         
         <SetViewOnClick coords={mapCenter} />
         

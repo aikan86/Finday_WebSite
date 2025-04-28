@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { CategoryService } from '../../services/api';
+import useWindowSize from '../../hooks/useWindowSize';
+
+const { width } = useWindowSize();
+const isMobile = width <= 768;
 
 const FilterContainer = styled.div`
   position: absolute;
@@ -17,9 +21,7 @@ const FilterContainer = styled.div`
   
   @media (max-width: 768px) {
     width: calc(100% - 20px);
-    left: 10px;
-    right: 10px;
-    max-height: calc(100vh - 140px);
+    max-height: 70vh;
   }
 `;
 
