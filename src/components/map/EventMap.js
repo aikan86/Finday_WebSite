@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 'react-leaflet';
 import { Icon } from 'leaflet';
 import styled from 'styled-components';
 import FilterPanel from './FilterPanel';
 import { useNavigate } from 'react-router-dom';
-import useWindowSize from '../../hooks/useWindowSize'; // Importa l'hook personalizzato
+import useWindowSize from '../../hooks/useWindowSize';
 
 const MapWrapper = styled.div`
   height: 100vh;
@@ -62,7 +62,7 @@ const SearchBar = styled.div`
     display: flex;
   }
   
-    input {
+  input {
     padding: 8px 12px;
     border-radius: 20px;
     border: 1px solid #e0e0e0;
@@ -116,14 +116,30 @@ const MobileSearchButton = styled.button`
   }
 `;
 
-// Componente per centrare la mappa su una posizione
-function SetViewOnClick({ coords }) {
-  const map = useMap();
-  map.setView(coords, map.getZoom());
-  return null;
-}
+// Aggiungiamo un pulsante per la geolocalizzazione
+const LocationButton = styled.button`
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  width: 40px;
+  height: 40px;
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  z-index: 1000;
+  cursor: pointer;
+  font-size: 20px;
+  
+  &:hover {
+    background: #f5f5f5;
+  }
+`;
 
-// Marker personalizzato
+// Marker personalizzato per eventi
 const customIcon = new Icon({
   iconUrl: '/marker-icon-red.png',
   iconSize: [25, 41],
@@ -131,17 +147,55 @@ const customIcon = new Icon({
   popupAnchor: [1, -34],
 });
 
+// Marker personalizzato per la posizione utente
+const userLocationIcon = new Icon({
+  iconUrl: '/user-location-marker.png', // Assicurati di avere quest'icona nella cartella public
+  iconSize: [30, 30],
+  iconAnchor: [15, 15],
+  popupAnchor: [0, -15],
+});
+
+// Componente per gestire la posizione dell'utente
+function LocationMarker({ onLocationFound }) {
+  const map = useMapEvents({
+    locationfound(e) {
+      if (onLocationFound) {
+        onLocationFound(e.latlng);
+      }
+      // Zoom che copre circa 50km quadrati (valore 11 approssimativo)
+      map.flyTo(e.latlng, 11);
+    },
+    locationerror(e) {
+      console.error("Errore di geolocalizzazione:", e.message);
+      alert("Non è stato possibile trovare la tua posizione. Verifica che la geolocalizzazione sia attivata nel tuo browser.");
+    }
+  });
+  
+  return null;
+}
+
+// Componente per centrare la mappa su una posizione
+function SetViewOnClick({ coords, zoom }) {
+  const map = useMap();
+  useEffect(() => {
+    if (coords) {
+      map.setView(coords, zoom || map.getZoom());
+    }
+  }, [coords, zoom, map]);
+  return null;
+}
+
 const EventMap = ({ events = [], onSearch }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [filteredEvents, setFilteredEvents] = useState(events);
   const [mapCenter, setMapCenter] = useState([44.1155, 8.9442]); // Centro della Liguria
-  const [isSearchOpen, setIsSearchOpen] = useState(false); // Nuovo stato per la barra di ricerca mobile
+  const [mapZoom, setMapZoom] = useState(9); // Zoom di default
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [userLocation, setUserLocation] = useState(null);
   const navigate = useNavigate();
-  const { width } = useWindowSize(); // Usa l'hook personalizzato
+  const { width } = useWindowSize();
   const isMobile = width <= 768;
-  
-  const defaultZoom = 9;
 
   // Chiudi la barra di ricerca quando si passa alla visualizzazione desktop
   useEffect(() => {
@@ -194,6 +248,33 @@ const EventMap = ({ events = [], onSearch }) => {
 
   const handleMarkerClick = (event) => {
     navigate(`/event/${event.id}`);
+  };
+
+  const handleLocationFound = (location) => {
+    setUserLocation(location);
+    setMapCenter([location.lat, location.lng]);
+    setMapZoom(11); // Zoom per coprire circa 50 km quadrati
+  };
+
+  const requestUserLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const location = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          };
+          handleLocationFound(location);
+        },
+        (error) => {
+          console.error("Errore di geolocalizzazione:", error.message);
+          alert("Non è stato possibile trovare la tua posizione. Verifica che la geolocalizzazione sia attivata nel tuo browser.");
+        },
+        { enableHighAccuracy: true }
+      );
+    } else {
+      alert("La geolocalizzazione non è supportata dal tuo browser.");
+    }
   };
 
   // Se non ci sono eventi filtrati, mostra tutti gli eventi
@@ -264,9 +345,17 @@ const EventMap = ({ events = [], onSearch }) => {
         onApplyFilters={handleApplyFilters}
       />
       
+      {/* Pulsante per la geolocalizzazione */}
+      <LocationButton 
+        onClick={requestUserLocation}
+        title="Trova la mia posizione"
+      >
+        📍
+      </LocationButton>
+      
       <MapContainer 
         center={mapCenter} 
-        zoom={defaultZoom} 
+        zoom={mapZoom} 
         style={{ height: '100%', width: '100%' }}
         zoomControl={false}
       >
@@ -275,8 +364,25 @@ const EventMap = ({ events = [], onSearch }) => {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         
-        <SetViewOnClick coords={mapCenter} />
+        {/* Componente per gestire la geolocalizzazione */}
+        <LocationMarker onLocationFound={handleLocationFound} />
         
+        {/* Componente per centrare la mappa */}
+        <SetViewOnClick coords={mapCenter} zoom={mapZoom} />
+        
+        {/* Marker per la posizione dell'utente */}
+        {userLocation && (
+          <Marker 
+            position={[userLocation.lat, userLocation.lng]} 
+            icon={userLocationIcon}
+          >
+            <Popup>
+              <div>La tua posizione attuale</div>
+            </Popup>
+          </Marker>
+        )}
+        
+        {/* Marker per gli eventi */}
         {displayEvents.map(event => (
           <Marker 
             key={event.id} 
@@ -286,7 +392,7 @@ const EventMap = ({ events = [], onSearch }) => {
               click: () => handleMarkerClick(event)
             }}
           >
-            <Popup>
+                        <Popup>
               <div>
                 <h3>{event.title}</h3>
                 <p>{event.description?.substring(0, 100)}...</p>
