@@ -3,9 +3,6 @@ import styled from 'styled-components';
 import { CategoryService } from '../../services/api';
 import useWindowSize from '../../hooks/useWindowSize';
 
-const { width } = useWindowSize();
-const isMobile = width <= 768;
-
 const FilterContainer = styled.div`
   position: absolute;
   top: 70px;
@@ -104,7 +101,11 @@ const MOCK_CATEGORIES = [
 ];
 
 const FilterPanel = ({ isOpen, onClose, onApplyFilters }) => {
-  const [categories, setCategories] = useState([]); // Definiamo correttamente la variabile categories
+  // Chiamiamo l'hook all'interno del componente
+  const { width } = useWindowSize();
+  const isMobile = width <= 768;
+
+  const [categories, setCategories] = useState([]);
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -228,7 +229,8 @@ const FilterPanel = ({ isOpen, onClose, onApplyFilters }) => {
             borderRadius: '4px',
             cursor: 'pointer',
             background: '#f1f1f1',
-            border: 'none'
+            border: 'none',
+            flexGrow: isMobile ? 0 : 1 // Adattamento per mobile
           }}
         >
           Reset
@@ -239,3 +241,6 @@ const FilterPanel = ({ isOpen, onClose, onApplyFilters }) => {
 };
 
 export default FilterPanel;
+
+        
+        
