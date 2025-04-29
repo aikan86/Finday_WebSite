@@ -522,11 +522,6 @@ const EventMap = ({ events = [], onSearch }) => {
       setFilteredEvents([]);
       setHasAppliedFilters(false);
       setShowRadiusCircle(false);
-      setTimeout(() => {
-        setSelectedEvent(event);
-        setEventLoading(false);
-        setIsSidebarOpen(true);
-      }, 300); // Simuliamo un breve caricamento
     };
   
     const handleMarkerClick = (event) => {
