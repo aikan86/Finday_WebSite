@@ -226,8 +226,8 @@ const customIcon = new Icon({
 // Marker personalizzato per la posizione utente
 const userLocationIcon = new Icon({
   iconUrl: '/user-location-marker.png',
-  iconSize: [30, 30],
-  iconAnchor: [15, 15],
+  iconSize: [25, 25],
+  iconAnchor: [12, 12],
   popupAnchor: [0, -15],
 });
 
