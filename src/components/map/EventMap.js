@@ -1,17 +1,17 @@
-
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents, Circle } from 'react-leaflet';
+import MarkerClusterGroup from 'react-leaflet-markercluster'; // Importa il componente per il clustering
 import { Icon } from 'leaflet';
 import styled from 'styled-components';
 import FilterPanel from './FilterPanel';
+import EventSidebar from './EventSidebar';
 import { useNavigate } from 'react-router-dom';
 import useWindowSize from '../../hooks/useWindowSize';
 import InfoBox from './InfoBox'; 
-import EventSidebar from './EventSidebar';
 // Se necessario, importa date-fns
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
+
 
 const MapWrapper = styled.div`
   height: 100vh;
@@ -720,38 +720,48 @@ const EventMap = ({ events = [], onSearch }) => {
           />
         )}
         
-        {/* Marker per la posizione dell'utente */}
-        {userLocation && (
-          <Marker 
-            position={[userLocation.lat, userLocation.lng]} 
-            icon={userLocationIcon}
-          >
-            <Popup>
-              <div>La tua posizione attuale</div>
-            </Popup>
-          </Marker>
-        )}
-        
-        {/* Marker per gli eventi */}
-        {displayEvents.map(event => (
-          <Marker 
-            key={event.id} 
-            position={[event.latitude, event.longitude]}
-            icon={customIcon}
-            eventHandlers={{
-              click: () => handleMarkerClick(event)
-            }}
-          >
-            <Popup>
-              <div>
-                <h3>{event.title}</h3>
-                <p>{event.description?.substring(0, 100)}...</p>
-                <p>Data: {new Date(event.date).toLocaleDateString()}</p>
-                {/* Rimosso il pulsante "Vedi dettagli" poiché ora si apre la sidebar direttamente cliccando sul marker */}
-              </div>
-            </Popup>
-          </Marker>
-        ))}
+        <MarkerClusterGroup
+          chunkedLoading
+          iconCreateFunction={(cluster) => {
+            // Personalizzazione dell'icona del cluster
+            const childCount = cluster.getChildCount();
+            
+            // Determina la classe CSS in base al numero di marker nel cluster
+            let className = 'custom-cluster-';
+            if (childCount < 10) {
+              className += 'small';
+            } else if (childCount < 100) {
+              className += 'medium';
+            } else {
+              className += 'large';
+            }
+            
+            return L.divIcon({
+              html: `<div><span>${childCount}</span></div>`,
+              className: `marker-cluster ${className}`,
+              iconSize: L.point(40, 40)
+            });
+          }}
+        >
+          {displayEvents.map(eventItem => (
+            <Marker 
+              key={eventItem.id}
+              position={[eventItem.latitude, eventItem.longitude]}
+              icon={customIcon}
+              eventHandlers={{
+                click: () => handleMarkerClick(eventItem)
+              }}
+            >
+              <Popup>
+                <div>
+                  <h3>{eventItem.title}</h3>
+                  <p>{eventItem.description?.substring(0, 100)}...</p>
+                  <p>Data: {new Date(eventItem.date).toLocaleDateString()}</p>
+                </div>
+              </Popup>
+            </Marker>
+          ))}
+        </MarkerClusterGroup>
       </MapContainer>
       
       <EventSidebar 
