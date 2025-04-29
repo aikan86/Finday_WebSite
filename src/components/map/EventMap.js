@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents, Circle } from 'react-leaflet';
 import { Icon } from 'leaflet';
 import styled from 'styled-components';
@@ -60,11 +60,11 @@ const LogoOverlay = styled.div`
 const SearchBar = styled.div`
   display: flex;
   pointer-events: auto;
-  position: relative; /* Importante per posizionamento dei suggerimenti */
+  position: relative;
   
   form {
     display: flex;
-    position: relative; /* Importante per posizionamento dei suggerimenti */
+    position: relative;
   }
   
   input {
@@ -104,7 +104,7 @@ const SearchSuggestions = styled.div`
   position: absolute;
   top: 100%;
   left: 0;
-  width: 250px; /* Stessa larghezza dell'input */
+  width: 250px;
   background: white;
   border-radius: 0 0 8px 8px;
   box-shadow: 0 4px 8px rgba(0,0,0,0.1);
@@ -114,7 +114,7 @@ const SearchSuggestions = styled.div`
   margin-top: 5px;
   
   @media (max-width: 768px) {
-    width: calc(100vw - 120px); /* Stessa larghezza dell'input mobile */
+    width: calc(100vw - 120px);
   }
   
   div {
@@ -374,22 +374,85 @@ const searchLocation = async (query) => {
   }
 };
 
+// Componenti per LocationMarker e SetViewOnClick...
+
 const EventMap = ({ events = [], onSearch }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [filteredEvents, setFilteredEvents] = useState([]);
   const [hasAppliedFilters, setHasAppliedFilters] = useState(false);
-  const [mapCenter, setMapCenter] = useState([44.1155, 8.9442]); // Centro della Liguria
-  const [mapZoom, setMapZoom] = useState(9); // Zoom di default
+  const [mapCenter, setMapCenter] = useState([44.1155, 8.9442]);
+  const [mapZoom, setMapZoom] = useState(9);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [userLocation, setUserLocation] = useState(null);
-  const [searchRadius, setSearchRadius] = useState(50); // Raggio in km
+  const [searchRadius, setSearchRadius] = useState(50);
   const [showRadiusCircle, setShowRadiusCircle] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState('');
+  // Nuovi stati per i suggerimenti
+  const [suggestions, setSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  
   const navigate = useNavigate();
   const { width } = useWindowSize();
   const isMobile = width <= 768;
+
+  // Debounce per la ricerca
+  const debouncedSearch = useCallback(
+    debounce((query) => {
+      if (query && query.length >= 3) {
+        fetchSuggestions(query);
+      } else {
+        setSuggestions([]);
+        setShowSuggestions(false);
+      }
+    }, 500),
+    []
+  );
+
+  // Funzione per creare un debounce
+  function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+      const later = () => {
+        clearTimeout(timeout);
+        func(...args);
+      };
+      clearTimeout(timeout);
+      timeout = setTimeout(later, wait);
+    };
+  }
+
+  // Funzione per cercare suggerimenti
+  const fetchSuggestions = async (query) => {
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5`
+      );
+      
+      if (!response.ok) {
+        throw new Error('Errore nella ricerca suggerimenti');
+      }
+      
+      const data = await response.json();
+      
+      if (data && data.length > 0) {
+        setSuggestions(data.map(item => ({
+          displayName: item.display_name,
+          lat: parseFloat(item.lat),
+          lng: parseFloat(item.lon)
+        })));
+        setShowSuggestions(true);
+      } else {
+        setSuggestions([]);
+        setShowSuggestions(false);
+      }
+    } catch (error) {
+      console.error('Errore nella ricerca suggerimenti:', error);
+      setSuggestions([]);
+      setShowSuggestions(false);
+    }
+  };
 
   // Chiudi la barra di ricerca quando si passa alla visualizzazione desktop
   useEffect(() => {
@@ -403,30 +466,58 @@ const EventMap = ({ events = [], onSearch }) => {
     requestUserLocation();
   }, []);
 
+  // Gestisci click fuori dai suggerimenti per chiuderli
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showSuggestions && !event.target.closest('.search-container')) {
+        setShowSuggestions(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showSuggestions]);
+
   // Funzione per cercare un luogo e centrare la mappa
   const handleSearchSubmit = async (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
       setIsSearching(true);
       setSearchError('');
+      setShowSuggestions(false);
       
       try {
-        const locationResult = await searchLocation(searchQuery);
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&limit=1`
+        );
         
-        if (locationResult) {
-          // Aggiorna il centro della mappa e il livello di zoom
-          setMapCenter([locationResult.lat, locationResult.lng]);
-          setMapZoom(12); // Zoom appropriato per vedere l'area cercata
+        if (!response.ok) {
+          throw new Error('Errore nella ricerca del luogo');
+        }
+        
+        const data = await response.json();
+        
+        if (data && data.length > 0) {
+          const location = {
+            lat: parseFloat(data[0].lat),
+            lng: parseFloat(data[0].lon),
+            displayName: data[0].display_name
+          };
           
-          // Se abbiamo una posizione utente, imposta anche questa come nuova posizione dell'utente
-          // per poter utilizzare il filtro per raggio
+          // Aggiorna il centro della mappa e il livello di zoom
+          setMapCenter([location.lat, location.lng]);
+          setMapZoom(13); // Zoom appropriato per vedere l'area cercata
+          
+          // Imposta anche questa come nuova posizione dell'utente
           setUserLocation({
-            lat: locationResult.lat,
-            lng: locationResult.lng
+            lat: location.lat,
+            lng: location.lng
           });
           
           // Mostra un messaggio di successo
-          console.log(`Trovato: ${locationResult.displayName}`);
+          console.log(`Trovato: ${location.displayName}`);
         } else {
           setSearchError('Nessun risultato trovato per la ricerca');
         }
@@ -446,6 +537,22 @@ const EventMap = ({ events = [], onSearch }) => {
 
   const toggleMobileSearch = () => {
     setIsSearchOpen(!isSearchOpen);
+  };
+
+  // Gestisci il click su un suggerimento
+  const handleSuggestionClick = (suggestion) => {
+    setSearchQuery(suggestion.displayName.split(',')[0]);
+    setShowSuggestions(false);
+    
+    // Centra la mappa sulla posizione suggerita
+    setMapCenter([suggestion.lat, suggestion.lng]);
+    setMapZoom(13);
+    
+    // Imposta la posizione dell'utente
+    setUserLocation({
+      lat: suggestion.lat,
+      lng: suggestion.lng
+    });
   };
 
   const handleApplyFilters = (filters) => {
@@ -549,86 +656,6 @@ const EventMap = ({ events = [], onSearch }) => {
     }
   };
 
-  const searchSuggestions = async (query) => {
-  if (!query || query.length < 3) {
-    setSuggestions([]);
-    setShowSuggestions(false);
-    return;
-  }
-  
-  try {
-    const response = await fetch(
-      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5`
-    );
-    
-    if (!response.ok) {
-      throw new Error('Errore nella ricerca suggerimenti');
-    }
-    
-    const data = await response.json();
-    
-    if (data && data.length > 0) {
-      setSuggestions(data.map(item => ({
-        displayName: item.display_name,
-        lat: parseFloat(item.lat),
-        lng: parseFloat(item.lon)
-      })));
-      setShowSuggestions(true);
-    } else {
-      setSuggestions([]);
-      setShowSuggestions(false);
-    }
-  } catch (error) {
-    console.error('Errore nella ricerca suggerimenti:', error);
-    setSuggestions([]);
-    setShowSuggestions(false);
-  }
-};
-
-// Aggiorna input per usare i suggerimenti
-<input 
-  type="text" 
-  placeholder="Cerca località..." 
-  value={searchQuery}
-  onChange={(e) => {
-    setSearchQuery(e.target.value);
-    searchSuggestions(e.target.value);
-  }}
-  onFocus={() => {
-    if (suggestions.length > 0) {
-      setShowSuggestions(true);
-    }
-  }}
-  disabled={isSearching}
-/>
-
-{/* Aggiungi questo componente per i suggerimenti subito dopo il form */}
-{showSuggestions && suggestions.length > 0 && (
-  <SearchSuggestions>
-    {suggestions.map((suggestion, index) => (
-      <div 
-        key={index}
-        onClick={() => {
-          setSearchQuery(suggestion.displayName.split(',')[0]);
-          setShowSuggestions(false);
-          
-          // Centra la mappa sulla posizione suggerita
-          setMapCenter([suggestion.lat, suggestion.lng]);
-          setMapZoom(13);
-          
-          // Imposta la posizione dell'utente
-          setUserLocation({
-            lat: suggestion.lat,
-            lng: suggestion.lng
-          });
-        }}
-      >
-        {suggestion.displayName}
-      </div>
-    ))}
-  </SearchSuggestions>
-)}
-
   // Determina quali eventi mostrare
   const displayEvents = hasAppliedFilters ? filteredEvents : events;
   const noResults = hasAppliedFilters && filteredEvents.length === 0;
@@ -648,12 +675,20 @@ const EventMap = ({ events = [], onSearch }) => {
           )}
           
           <SearchBar isSearchOpen={isSearchOpen}>
-            <form onSubmit={handleSearchSubmit}>
+            <form onSubmit={handleSearchSubmit} className="search-container">
               <input 
                 type="text" 
                 placeholder="Cerca località..." 
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  debouncedSearch(e.target.value);
+                }}
+                onFocus={() => {
+                  if (suggestions.length > 0) {
+                    setShowSuggestions(true);
+                  }
+                }}
                 disabled={isSearching}
               />
               <button 
@@ -666,6 +701,20 @@ const EventMap = ({ events = [], onSearch }) => {
               >
                 {isSearching ? "⏳" : "🔍"}
               </button>
+              
+              {/* Suggerimenti */}
+              {showSuggestions && suggestions.length > 0 && (
+                <SearchSuggestions>
+                  {suggestions.map((suggestion, index) => (
+                    <div 
+                      key={index}
+                      onClick={() => handleSuggestionClick(suggestion)}
+                    >
+                      {suggestion.displayName}
+                    </div>
+                  ))}
+                </SearchSuggestions>
+              )}
             </form>
             <button 
               onClick={() => setIsFilterOpen(!isFilterOpen)} 
@@ -714,7 +763,7 @@ const EventMap = ({ events = [], onSearch }) => {
         isOpen={isFilterOpen}
         onClose={() => setIsFilterOpen(false)}
         onApplyFilters={handleApplyFilters}
-        userLocation={userLocation} // Passa la posizione utente per abilitare il filtro raggio
+        userLocation={userLocation}
       />
       
       {/* Pulsante per la geolocalizzazione */}
@@ -743,8 +792,7 @@ const EventMap = ({ events = [], onSearch }) => {
         <SetViewOnClick coords={mapCenter} zoom={mapZoom} />
         
         {/* Cerchio che mostra il raggio di ricerca */}
-                {/* Cerchio che mostra il raggio di ricerca */}
-                {userLocation && showRadiusCircle && (
+        {userLocation && showRadiusCircle && (
           <Circle
             center={[userLocation.lat, userLocation.lng]}
             radius={searchRadius * 1000} // Converti km in metri
@@ -806,5 +854,3 @@ const EventMap = ({ events = [], onSearch }) => {
 };
 
 export default EventMap;
-
-
