@@ -13,11 +13,6 @@ import EventSidebar from './EventSidebar';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
 
-const [selectedEvent, setSelectedEvent] = useState(null);
-const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-const [eventLoading, setEventLoading] = useState(false);
-const [eventError, setEventError] = useState(null);
-
 const MapWrapper = styled.div`
   height: 100vh;
   width: 100%;
@@ -304,6 +299,11 @@ const EventMap = ({ events = [], onSearch }) => {
   const [searchError, setSearchError] = useState('');
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [eventLoading, setEventLoading] = useState(false);
+  const [eventError, setEventError] = useState(null);
+
   
   const navigate = useNavigate();
   const { width } = useWindowSize();
