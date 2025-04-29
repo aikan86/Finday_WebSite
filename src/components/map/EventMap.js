@@ -1,10 +1,9 @@
-
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents, Circle } from 'react-leaflet';
 import { Icon } from 'leaflet';
 import styled from 'styled-components';
 import FilterPanel from './FilterPanel';
+import InfoBox from './InfoBox'; 
 import { useNavigate } from 'react-router-dom';
 import useWindowSize from '../../hooks/useWindowSize';
 
@@ -663,11 +662,13 @@ const EventMap = ({ events = [], onSearch }) => {
         📍
       </LocationButton>
       
+      <InfoBox isMobile={isMobile} />
+
       <MapContainer 
-        center={mapCenter} 
-        zoom={mapZoom} 
-        style={{ height: '100%', width: '100%' }}
-        zoomControl={false}
+          center={mapCenter} 
+          zoom={mapZoom} 
+          style={{ height: '100%', width: '100%' }}
+          zoomControl={false}
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
