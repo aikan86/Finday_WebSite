@@ -282,7 +282,6 @@ function debounce(func, wait) {
 
 const EventMap = ({ events = [], onSearch }) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const isMobile = width <= 768;
   const [isFilterOpen, setIsFilterOpen] = useState(!isMobile);  
   const [filteredEvents, setFilteredEvents] = useState([]);
   const [hasAppliedFilters, setHasAppliedFilters] = useState(false);
