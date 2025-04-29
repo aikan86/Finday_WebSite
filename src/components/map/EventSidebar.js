@@ -50,14 +50,45 @@ const CloseButton = styled.button`
   position: absolute;
   top: 15px;
   right: 15px;
-  background: none;
+  background: #f1f1f1;
   border: none;
-  font-size: 24px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
   cursor: pointer;
   color: #333;
+  z-index: 2001;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   
   &:hover {
-    color: #f39c12;
+    background: #e0e0e0;
+  }
+  
+  @media (max-width: 768px) {
+    top: 10px;
+    right: 10px;
+    width: 40px;
+    height: 40px;
+    font-size: 22px;
+  }
+`;
+
+const SidebarOverlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1999;
+  display: ${props => props.isOpen ? 'block' : 'none'};
+  
+  @media (min-width: 769px) {
+    display: none; // Nascondi su desktop
   }
 `;
 
@@ -176,7 +207,9 @@ const EventSidebar = ({ isOpen, event, loading, error, onClose }) => {
   
   return (
     <SidebarContainer isOpen={isOpen}>
-      <CloseButton onClick={onClose}>&times;</CloseButton>
+        <CloseButton onClick={onClose} aria-label="Chiudi">
+          ✕
+        </CloseButton>
       
       {loading ? (
         <LoadingContainer>
@@ -297,6 +330,35 @@ const EventSidebar = ({ isOpen, event, loading, error, onClose }) => {
           </SidebarFooter>
         </>
       )}
+     {!loading && !error && event && (
+          <div style={{ 
+            padding: '15px 20px', 
+            borderTop: '1px solid #f0f0f0',
+            display: 'flex',
+            justifyContent: 'center'
+          }}>
+          <button
+              onClick={onClose}
+              style={{
+                background: '#f39c12',
+                color: 'white',
+                border: 'none',
+                padding: '12px 20px',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '15px',
+                width: '100%',
+                fontWeight: '500',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px'
+              }}
+            >
+              <span>←</span> Torna alla mappa
+            </button>
+          </div>
+        )}
     </SidebarContainer>
   );
 };
