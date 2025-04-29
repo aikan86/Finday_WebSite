@@ -720,6 +720,17 @@ const EventMap = ({ events = [], onSearch }) => {
           />
         )}
         
+        {userLocation && (
+        <Marker 
+          position={[userLocation.lat, userLocation.lng]} 
+          icon={userLocationIcon}
+        >
+          <Popup>
+            <div>La tua posizione attuale</div>
+          </Popup>
+        </Marker>
+        )}
+
         <MarkerClusterGroup
           chunkedLoading
           iconCreateFunction={(cluster) => {
