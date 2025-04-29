@@ -63,7 +63,7 @@ const InfoBox = ({ isMobile }) => {
         Con Finday puoi scoprire tra <InfoHighlight>centinaia di eventi</InfoHighlight> divisi per zona e categoria
       </InfoText>
       <InfoText>
-        <InfoHighlight>Consiglio:</InfoHighlight> Usa i filtri per trovare eventi vicino a te
+        <InfoHighlight>Usa i filtri per trovare eventi vicino a te</InfoHighlight> 
       </InfoText>
     </InfoContainer>
   );
