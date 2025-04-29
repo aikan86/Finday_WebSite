@@ -11,7 +11,7 @@ import InfoBox from './InfoBox';
 // Se necessario, importa date-fns
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
-
+import L from 'leaflet';
 
 const MapWrapper = styled.div`
   height: 100vh;

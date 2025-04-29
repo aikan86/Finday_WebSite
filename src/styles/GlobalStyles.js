@@ -48,16 +48,42 @@ const GlobalStyles = createGlobalStyle`
     background-clip: padding-box;
     border-radius: 20px;
   }
+
   .marker-cluster div {
-    width: 30px;
-    height: 30px;
-    margin-left: 5px;
-    margin-top: 5px;
-    text-align: center;
-    border-radius: 15px;
-    color: white;
+    width: 36px;
+    height: 36px;
+    margin-left: 2px;
+    margin-top: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-size: 12px;
     font-weight: bold;
+    color: white;
   }
+
+  .custom-cluster-small {
+    background-color: rgba(243, 156, 18, 0.6);
+  }
+  .custom-cluster-small div {
+    background-color: rgba(243, 156, 18, 0.8);
+  }
+
+  .custom-cluster-medium {
+    background-color: rgba(241, 128, 23, 0.6);
+  }
+  .custom-cluster-medium div {
+    background-color: rgba(241, 128, 23, 0.8);
+  }
+
+  .custom-cluster-large {
+    background-color: rgba(240, 100, 28, 0.6);
+  }
+  .custom-cluster-large div {
+    background-color: rgba(240, 100, 28, 0.8);
+  }
+
   .marker-cluster span {
     line-height: 30px;
   }
