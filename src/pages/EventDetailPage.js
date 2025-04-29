@@ -115,6 +115,25 @@ const MOCK_EVENTS = [
   }
 ];
 
+const DirectionsButton = styled.a`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: #4285F4; /* Colore blu di Google */
+  color: white;
+  text-decoration: none;
+  padding: 8px 12px;
+  border-radius: 4px;
+  margin-top: 15px;
+  font-weight: 500;
+  transition: background 0.3s;
+  
+  &:hover {
+    background: #3367D6;
+  }
+`;
+
 const PageContainer = styled.div`
   max-width: 1200px;
   margin: 0 auto;
@@ -431,6 +450,18 @@ const EventDetailPage = () => {
             <div>{event.city}, {event.region}</div>
           </div>
           
+          {event.latitude && event.longitude && (
+            <div className="info-item">
+              <DirectionsButton 
+                href={`https://www.google.com/maps/dir/?api=1&destination=${event.latitude},${event.longitude}&travelmode=driving`} 
+                target="_blank" 
+                rel="noopener noreferrer"
+              >
+                <span>📍</span> Indicazioni stradali
+              </DirectionsButton>
+            </div>
+          )}
+
           {/* Potremmo aggiungere qui una mini mappa con la posizione */}
           <div style={{ 
             marginTop: '20px', 

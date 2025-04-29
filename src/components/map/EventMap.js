@@ -8,6 +8,15 @@ import FilterPanel from './FilterPanel';
 import { useNavigate } from 'react-router-dom';
 import useWindowSize from '../../hooks/useWindowSize';
 import InfoBox from './InfoBox'; 
+import EventSidebar from './EventSidebar';
+// Se necessario, importa date-fns
+import { format } from 'date-fns';
+import { it } from 'date-fns/locale';
+
+const [selectedEvent, setSelectedEvent] = useState(null);
+const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+const [eventLoading, setEventLoading] = useState(false);
+const [eventError, setEventError] = useState(null);
 
 const MapWrapper = styled.div`
   height: 100vh;
@@ -513,12 +522,27 @@ const EventMap = ({ events = [], onSearch }) => {
       setFilteredEvents([]);
       setHasAppliedFilters(false);
       setShowRadiusCircle(false);
+      setTimeout(() => {
+        setSelectedEvent(event);
+        setEventLoading(false);
+        setIsSidebarOpen(true);
+      }, 300); // Simuliamo un breve caricamento
     };
   
     const handleMarkerClick = (event) => {
+      setEventLoading(true);
+      setEventError(null);
       navigate(`/event/${event.id}`);
     };
   
+    const handleCloseSidebar = () => {
+      setIsSidebarOpen(false);
+      // Opzionale: attendi che la transizione di chiusura finisca prima di resettare l'evento
+      setTimeout(() => {
+        setSelectedEvent(null);
+      }, 300);
+    };
+    
     const handleLocationFound = (location) => {
       setUserLocation(location);
       setMapCenter([location.lat, location.lng]);
@@ -723,24 +747,19 @@ const EventMap = ({ events = [], onSearch }) => {
                 <h3>{event.title}</h3>
                 <p>{event.description?.substring(0, 100)}...</p>
                 <p>Data: {new Date(event.date).toLocaleDateString()}</p>
-                <button 
-                  onClick={() => navigate(`/event/${event.id}`)}
-                  style={{
-                    background: '#f39c12',
-                    color: 'white',
-                    border: 'none',
-                    padding: '5px 10px',
-                    borderRadius: '4px',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Vedi dettagli
-                </button>
+                {/* Rimosso il pulsante "Vedi dettagli" poiché ora si apre la sidebar direttamente cliccando sul marker */}
               </div>
             </Popup>
           </Marker>
         ))}
       </MapContainer>
+      <EventSidebar 
+        isOpen={isSidebarOpen}
+        event={selectedEvent}
+        loading={eventLoading}
+        error={eventError}
+        onClose={handleCloseSidebar}
+      />
     </MapWrapper>
   );
 };
