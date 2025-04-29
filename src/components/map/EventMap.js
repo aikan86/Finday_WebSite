@@ -116,6 +116,32 @@ const MobileSearchButton = styled.button`
   }
 `;
 
+// Messaggio per nessun risultato dei filtri
+const NoResultsMessage = styled.div`
+  position: absolute;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: white;
+  padding: 10px 20px;
+  border-radius: 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  z-index: 1000;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  
+  button {
+    background: none;
+    border: none;
+    color: #f39c12;
+    margin-left: 10px;
+    cursor: pointer;
+    text-decoration: underline;
+    padding: 0;
+  }
+`;
+
 // Aggiungiamo un pulsante per la geolocalizzazione
 const LocationButton = styled.button`
   position: absolute;
@@ -149,7 +175,7 @@ const customIcon = new Icon({
 
 // Marker personalizzato per la posizione utente
 const userLocationIcon = new Icon({
-  iconUrl: '/user-location-marker.png', // Assicurati di avere quest'icona nella cartella public
+  iconUrl: '/user-location-marker.png',
   iconSize: [30, 30],
   iconAnchor: [15, 15],
   popupAnchor: [0, -15],
@@ -171,9 +197,15 @@ function LocationMarker({ onLocationFound }) {
     }
   });
   
+  // Al montaggio del componente, richiedi la posizione
+  useEffect(() => {
+    map.locate();
+  }, [map]);
+  
   return null;
 }
 
+// Componente per centrare la mappa su una posizione
 // Componente per centrare la mappa su una posizione
 function SetViewOnClick({ coords, zoom }) {
   const map = useMap();
@@ -188,7 +220,8 @@ function SetViewOnClick({ coords, zoom }) {
 const EventMap = ({ events = [], onSearch }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [filteredEvents, setFilteredEvents] = useState(events);
+  const [filteredEvents, setFilteredEvents] = useState([]);
+  const [hasAppliedFilters, setHasAppliedFilters] = useState(false); // Nuovo stato per tenere traccia dei filtri applicati
   const [mapCenter, setMapCenter] = useState([44.1155, 8.9442]); // Centro della Liguria
   const [mapZoom, setMapZoom] = useState(9); // Zoom di default
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -203,6 +236,11 @@ const EventMap = ({ events = [], onSearch }) => {
       setIsSearchOpen(false);
     }
   }, [isMobile, isSearchOpen]);
+
+  // Richiedi la posizione dell'utente all'avvio
+  useEffect(() => {
+    requestUserLocation();
+  }, []);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
@@ -243,7 +281,13 @@ const EventMap = ({ events = [], onSearch }) => {
     }
     
     setFilteredEvents(filtered);
+    setHasAppliedFilters(true); // Imposta che sono stati applicati dei filtri
     setIsFilterOpen(false);
+  };
+
+  const resetFilters = () => {
+    setFilteredEvents([]);
+    setHasAppliedFilters(false);
   };
 
   const handleMarkerClick = (event) => {
@@ -268,17 +312,19 @@ const EventMap = ({ events = [], onSearch }) => {
         },
         (error) => {
           console.error("Errore di geolocalizzazione:", error.message);
-          alert("Non è stato possibile trovare la tua posizione. Verifica che la geolocalizzazione sia attivata nel tuo browser.");
+          // Non mostriamo alert all'avvio automatico per una migliore esperienza utente
+          console.log("Impossibile ottenere la posizione automaticamente");
         },
         { enableHighAccuracy: true }
       );
     } else {
-      alert("La geolocalizzazione non è supportata dal tuo browser.");
+      console.log("La geolocalizzazione non è supportata dal tuo browser.");
     }
   };
 
-  // Se non ci sono eventi filtrati, mostra tutti gli eventi
-  const displayEvents = filteredEvents.length > 0 ? filteredEvents : events;
+  // Determina quali eventi mostrare
+  const displayEvents = hasAppliedFilters ? filteredEvents : events;
+  const noResults = hasAppliedFilters && filteredEvents.length === 0;
 
   return (
     <MapWrapper>
@@ -339,6 +385,14 @@ const EventMap = ({ events = [], onSearch }) => {
         </LogoOverlay>
       </TopControlsContainer>
       
+      {/* Messaggio se non ci sono risultati */}
+      {noResults && (
+        <NoResultsMessage>
+          Nessun evento corrisponde ai filtri selezionati
+          <button onClick={resetFilters}>Rimuovi filtri</button>
+        </NoResultsMessage>
+      )}
+      
       <FilterPanel 
         isOpen={isFilterOpen}
         onClose={() => setIsFilterOpen(false)}
@@ -392,7 +446,7 @@ const EventMap = ({ events = [], onSearch }) => {
               click: () => handleMarkerClick(event)
             }}
           >
-                        <Popup>
+            <Popup>
               <div>
                 <h3>{event.title}</h3>
                 <p>{event.description?.substring(0, 100)}...</p>
