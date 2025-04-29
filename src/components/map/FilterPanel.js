@@ -223,7 +223,7 @@ const FilterPanel = ({ isOpen, onClose, onApplyFilters, userLocation }) => {
     setSelectedCategories([]);
     setStartDate('');
     setEndDate('');
-    setSearchRadius(50); // Reset al valore predefinito
+    setSearchRadius(200); // Reset al valore predefinito
   };
 
   if (!isOpen) return null;
