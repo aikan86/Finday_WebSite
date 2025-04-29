@@ -77,6 +77,7 @@ const RadiusSlider = styled.div`
   display: flex;
   flex-direction: column;
   gap: 5px;
+  margin-bottom: 10px;
   
   .slider-container {
     display: flex;
@@ -86,6 +87,29 @@ const RadiusSlider = styled.div`
   
   input[type="range"] {
     flex-grow: 1;
+    -webkit-appearance: none;
+    height: 8px;
+    border-radius: 5px;
+    background: #f1f1f1;
+    outline: none;
+    
+    &::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #f39c12;
+      cursor: pointer;
+    }
+    
+    &::-moz-range-thumb {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #f39c12;
+      cursor: pointer;
+    }
   }
   
   .radius-value {
@@ -94,6 +118,16 @@ const RadiusSlider = styled.div`
     color: #f39c12;
     width: 60px;
     text-align: right;
+  }
+  
+  @media (max-width: 768px) {
+    margin-bottom: 15px;
+    
+    .slider-info {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 5px;
+    }
   }
 `;
 
@@ -203,21 +237,24 @@ const FilterPanel = ({ isOpen, onClose, onApplyFilters, userLocation }) => {
 
       {/* Filtro per raggio di ricerca */}
       {userLocation && (
-        <FilterGroup>
-          <FilterLabel>Raggio di ricerca</FilterLabel>
-          <RadiusSlider>
-            <div className="slider-container">
-              <input
-                type="range"
-                min="5"
-                max="200"
-                value={searchRadius}
-                onChange={(e) => setSearchRadius(e.target.value)}
-              />
-              <span className="radius-value">{searchRadius} km</span>
-            </div>
-          </RadiusSlider>
-        </FilterGroup>
+      <FilterGroup>
+        <FilterLabel>Raggio di ricerca</FilterLabel>
+        <RadiusSlider>
+          <div className="slider-info">
+            <span>Distanza massima:</span>
+            <span className="radius-value">{searchRadius} km</span>
+          </div>
+          <div className="slider-container">
+            <input
+              type="range"
+              min="5"
+              max="200"
+              value={searchRadius}
+              onChange={(e) => setSearchRadius(e.target.value)}
+            />
+          </div>
+        </RadiusSlider>
+      </FilterGroup>
       )}
 
 <FilterGroup>
