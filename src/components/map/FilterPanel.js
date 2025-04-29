@@ -73,6 +73,30 @@ const DateFilter = styled.div`
   gap: 10px;
 `;
 
+const RadiusSlider = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  
+  .slider-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  input[type="range"] {
+    flex-grow: 1;
+  }
+  
+  .radius-value {
+    font-size: 14px;
+    font-weight: bold;
+    color: #f39c12;
+    width: 60px;
+    text-align: right;
+  }
+`;
+
 const ApplyButton = styled.button`
   background-color: #f39c12;
   color: white;
@@ -90,6 +114,7 @@ const ApplyButton = styled.button`
 `;
 
 // Dati di categorie di esempio per il testing
+// Dati di categorie di esempio per il testing
 const MOCK_CATEGORIES = [
   { id: 1, name: "Musica" },
   { id: 2, name: "Food & Drink" },
@@ -100,7 +125,7 @@ const MOCK_CATEGORIES = [
   { id: 7, name: "Cinema" }
 ];
 
-const FilterPanel = ({ isOpen, onClose, onApplyFilters }) => {
+const FilterPanel = ({ isOpen, onClose, onApplyFilters, userLocation }) => {
   // Chiamiamo l'hook all'interno del componente
   const { width } = useWindowSize();
   const isMobile = width <= 768;
@@ -109,6 +134,7 @@ const FilterPanel = ({ isOpen, onClose, onApplyFilters }) => {
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [searchRadius, setSearchRadius] = useState(50); // Default 50 km
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -154,7 +180,8 @@ const FilterPanel = ({ isOpen, onClose, onApplyFilters }) => {
     onApplyFilters({
       categories: selectedCategories,
       startDate,
-      endDate
+      endDate,
+      searchRadius: parseInt(searchRadius, 10) // Aggiungiamo il raggio di ricerca
     });
   };
 
@@ -162,6 +189,7 @@ const FilterPanel = ({ isOpen, onClose, onApplyFilters }) => {
     setSelectedCategories([]);
     setStartDate('');
     setEndDate('');
+    setSearchRadius(50); // Reset al valore predefinito
   };
 
   if (!isOpen) return null;
@@ -173,7 +201,26 @@ const FilterPanel = ({ isOpen, onClose, onApplyFilters }) => {
         <CloseButton onClick={onClose}>×</CloseButton>
       </FilterTitle>
 
-      <FilterGroup>
+      {/* Filtro per raggio di ricerca */}
+      {userLocation && (
+        <FilterGroup>
+          <FilterLabel>Raggio di ricerca</FilterLabel>
+          <RadiusSlider>
+            <div className="slider-container">
+              <input
+                type="range"
+                min="5"
+                max="200"
+                value={searchRadius}
+                onChange={(e) => setSearchRadius(e.target.value)}
+              />
+              <span className="radius-value">{searchRadius} km</span>
+            </div>
+          </RadiusSlider>
+        </FilterGroup>
+      )}
+
+<FilterGroup>
         <FilterLabel>Categorie</FilterLabel>
         {loading ? (
           <div>Caricamento categorie...</div>
@@ -230,7 +277,7 @@ const FilterPanel = ({ isOpen, onClose, onApplyFilters }) => {
             cursor: 'pointer',
             background: '#f1f1f1',
             border: 'none',
-            flexGrow: isMobile ? 0 : 1 // Adattamento per mobile
+            flexGrow: isMobile ? 0 : 1
           }}
         >
           Reset
@@ -241,6 +288,3 @@ const FilterPanel = ({ isOpen, onClose, onApplyFilters }) => {
 };
 
 export default FilterPanel;
-
-        
-        

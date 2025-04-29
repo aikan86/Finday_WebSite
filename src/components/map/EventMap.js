@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents, Circle } from 'react-leaflet';
 import { Icon } from 'leaflet';
 import styled from 'styled-components';
 import FilterPanel from './FilterPanel';
@@ -217,15 +217,47 @@ function SetViewOnClick({ coords, zoom }) {
   return null;
 }
 
+const searchLocation = async (query) => {
+  try {
+    // Usiamo Nominatim di OpenStreetMap per la geocodifica
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`
+    );
+    
+    if (!response.ok) {
+      throw new Error('Errore nella ricerca del luogo');
+    }
+    
+    const data = await response.json();
+    
+    if (data && data.length > 0) {
+      return {
+        lat: parseFloat(data[0].lat),
+        lng: parseFloat(data[0].lon),
+        displayName: data[0].display_name
+      };
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Errore nella geocodifica:', error);
+    return null;
+  }
+};
+
 const EventMap = ({ events = [], onSearch }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [filteredEvents, setFilteredEvents] = useState([]);
-  const [hasAppliedFilters, setHasAppliedFilters] = useState(false); // Nuovo stato per tenere traccia dei filtri applicati
+  const [hasAppliedFilters, setHasAppliedFilters] = useState(false);
   const [mapCenter, setMapCenter] = useState([44.1155, 8.9442]); // Centro della Liguria
   const [mapZoom, setMapZoom] = useState(9); // Zoom di default
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [userLocation, setUserLocation] = useState(null);
+  const [searchRadius, setSearchRadius] = useState(50); // Raggio in km
+  const [showRadiusCircle, setShowRadiusCircle] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchError, setSearchError] = useState('');
   const navigate = useNavigate();
   const { width } = useWindowSize();
   const isMobile = width <= 768;
@@ -242,13 +274,43 @@ const EventMap = ({ events = [], onSearch }) => {
     requestUserLocation();
   }, []);
 
-  const handleSearchSubmit = (e) => {
+  // Funzione per cercare un luogo e centrare la mappa
+  const handleSearchSubmit = async (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      onSearch && onSearch(searchQuery);
-      // Chiudere la barra di ricerca mobile dopo la ricerca
-      if (isMobile) {
-        setIsSearchOpen(false);
+      setIsSearching(true);
+      setSearchError('');
+      
+      try {
+        const locationResult = await searchLocation(searchQuery);
+        
+        if (locationResult) {
+          // Aggiorna il centro della mappa e il livello di zoom
+          setMapCenter([locationResult.lat, locationResult.lng]);
+          setMapZoom(12); // Zoom appropriato per vedere l'area cercata
+          
+          // Se abbiamo una posizione utente, imposta anche questa come nuova posizione dell'utente
+          // per poter utilizzare il filtro per raggio
+          setUserLocation({
+            lat: locationResult.lat,
+            lng: locationResult.lng
+          });
+          
+          // Mostra un messaggio di successo
+          console.log(`Trovato: ${locationResult.displayName}`);
+        } else {
+          setSearchError('Nessun risultato trovato per la ricerca');
+        }
+      } catch (error) {
+        console.error('Errore nella ricerca:', error);
+        setSearchError('Si è verificato un errore durante la ricerca');
+      } finally {
+        setIsSearching(false);
+        
+        // Chiudere la barra di ricerca mobile dopo la ricerca
+        if (isMobile) {
+          setIsSearchOpen(false);
+        }
       }
     }
   };
@@ -280,14 +342,51 @@ const EventMap = ({ events = [], onSearch }) => {
       filtered = filtered.filter(event => new Date(event.date) <= endDate);
     }
     
+    // Filtro per raggio di ricerca
+    if (userLocation && filters.searchRadius) {
+      setSearchRadius(filters.searchRadius);
+      setShowRadiusCircle(true);
+      
+      // Filtra gli eventi entro il raggio specificato
+      filtered = filtered.filter(event => {
+        // Calcola la distanza tra l'evento e la posizione dell'utente
+        const distance = calculateDistance(
+          userLocation.lat, 
+          userLocation.lng, 
+          event.latitude, 
+          event.longitude
+        );
+        
+        // Converti in km e verifica se è nel raggio
+        return distance <= filters.searchRadius;
+      });
+    } else {
+      setShowRadiusCircle(false);
+    }
+    
     setFilteredEvents(filtered);
-    setHasAppliedFilters(true); // Imposta che sono stati applicati dei filtri
+    setHasAppliedFilters(true);
     setIsFilterOpen(false);
+  };
+
+  // Funzione per calcolare la distanza tra due punti (formula di Haversine)
+  const calculateDistance = (lat1, lon1, lat2, lon2) => {
+    const R = 6371; // Raggio della Terra in km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+      Math.sin(dLon/2) * Math.sin(dLon/2); 
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+    const distance = R * c; // Distanza in km
+    return distance;
   };
 
   const resetFilters = () => {
     setFilteredEvents([]);
     setHasAppliedFilters(false);
+    setShowRadiusCircle(false);
   };
 
   const handleMarkerClick = (event) => {
@@ -312,7 +411,6 @@ const EventMap = ({ events = [], onSearch }) => {
         },
         (error) => {
           console.error("Errore di geolocalizzazione:", error.message);
-          // Non mostriamo alert all'avvio automatico per una migliore esperienza utente
           console.log("Impossibile ottenere la posizione automaticamente");
         },
         { enableHighAccuracy: true }
@@ -344,9 +442,10 @@ const EventMap = ({ events = [], onSearch }) => {
             <form onSubmit={handleSearchSubmit}>
               <input 
                 type="text" 
-                placeholder="Cerca eventi o luoghi..." 
+                placeholder="Cerca località..." 
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                disabled={isSearching}
               />
               <button 
                 type="submit" 
@@ -354,8 +453,9 @@ const EventMap = ({ events = [], onSearch }) => {
                 style={{ 
                   display: isMobile && !isSearchOpen ? 'none' : 'flex' 
                 }}
+                disabled={isSearching}
               >
-                🔍
+                {isSearching ? "⏳" : "🔍"}
               </button>
             </form>
             <button 
@@ -385,6 +485,14 @@ const EventMap = ({ events = [], onSearch }) => {
         </LogoOverlay>
       </TopControlsContainer>
       
+      {/* Messaggio di errore nella ricerca */}
+      {searchError && (
+        <NoResultsMessage>
+          {searchError}
+          <button onClick={() => setSearchError('')}>×</button>
+        </NoResultsMessage>
+      )}
+      
       {/* Messaggio se non ci sono risultati */}
       {noResults && (
         <NoResultsMessage>
@@ -397,6 +505,7 @@ const EventMap = ({ events = [], onSearch }) => {
         isOpen={isFilterOpen}
         onClose={() => setIsFilterOpen(false)}
         onApplyFilters={handleApplyFilters}
+        userLocation={userLocation} // Passa la posizione utente per abilitare il filtro raggio
       />
       
       {/* Pulsante per la geolocalizzazione */}
@@ -423,6 +532,20 @@ const EventMap = ({ events = [], onSearch }) => {
         
         {/* Componente per centrare la mappa */}
         <SetViewOnClick coords={mapCenter} zoom={mapZoom} />
+        
+        {/* Cerchio che mostra il raggio di ricerca */}
+                {/* Cerchio che mostra il raggio di ricerca */}
+                {userLocation && showRadiusCircle && (
+          <Circle
+            center={[userLocation.lat, userLocation.lng]}
+            radius={searchRadius * 1000} // Converti km in metri
+            pathOptions={{
+              color: '#f39c12',
+              fillColor: '#f39c12',
+              fillOpacity: 0.1,
+            }}
+          />
+        )}
         
         {/* Marker per la posizione dell'utente */}
         {userLocation && (
@@ -474,3 +597,5 @@ const EventMap = ({ events = [], onSearch }) => {
 };
 
 export default EventMap;
+
+
