@@ -324,9 +324,7 @@ const EventSidebar = ({ isOpen, event, loading, error, onClose }) => {
           </SidebarContent>
           
           <SidebarFooter>
-            <BackToMapButton onClick={onClose}>
-              Torna alla mappa
-            </BackToMapButton>
+
           </SidebarFooter>
         </>
       )}
@@ -337,26 +335,6 @@ const EventSidebar = ({ isOpen, event, loading, error, onClose }) => {
             display: 'flex',
             justifyContent: 'center'
           }}>
-          <button
-              onClick={onClose}
-              style={{
-                background: '#f39c12',
-                color: 'white',
-                border: 'none',
-                padding: '12px 20px',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontSize: '15px',
-                width: '100%',
-                fontWeight: '500',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px'
-              }}
-            >
-              <span>←</span> Torna alla mappa
-            </button>
           </div>
         )}
     </SidebarContainer>

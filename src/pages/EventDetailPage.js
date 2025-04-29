@@ -317,20 +317,6 @@ const EventDetailPage = () => {
       }}>
         <h2>Errore</h2>
         <p>{error}</p>
-        <button 
-          onClick={() => navigate('/')}
-          style={{
-            background: '#f39c12',
-            color: 'white',
-            border: 'none',
-            padding: '8px 16px',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            marginTop: '20px'
-          }}
-        >
-          Torna alla mappa
-        </button>
       </div>
     );
   }
@@ -345,29 +331,14 @@ const EventDetailPage = () => {
         height: '100vh'
       }}>
         <h2>Evento non trovato</h2>
-        <button 
-          onClick={() => navigate('/')}
-          style={{
-            background: '#f39c12',
-            color: 'white',
-            border: 'none',
-            padding: '8px 16px',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            marginTop: '20px'
-          }}
-        >
-          Torna alla mappa
-        </button>
+
       </div>
     );
   }
 
   return (
     <PageContainer>
-      <BackButton onClick={() => navigate('/')}>
-        ← Torna alla mappa
-      </BackButton>
+      
       
       <EventHeader>
         <h1>{event.title}</h1>
