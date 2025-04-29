@@ -753,6 +753,7 @@ const EventMap = ({ events = [], onSearch }) => {
           </Marker>
         ))}
       </MapContainer>
+      
       <EventSidebar 
         isOpen={isSidebarOpen}
         event={selectedEvent}
