@@ -1,3 +1,5 @@
+
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents, Circle } from 'react-leaflet';
 import { Icon } from 'leaflet';
@@ -5,9 +7,6 @@ import styled from 'styled-components';
 import FilterPanel from './FilterPanel';
 import { useNavigate } from 'react-router-dom';
 import useWindowSize from '../../hooks/useWindowSize';
-
-const [suggestions, setSuggestions] = useState([]);
-const [showSuggestions, setShowSuggestions] = useState(false);
 
 const MapWrapper = styled.div`
   height: 100vh;
@@ -100,41 +99,6 @@ const SearchBar = styled.div`
   }
 `;
 
-const SearchSuggestions = styled.div`
-  position: absolute;
-  top: 100%;
-  left: 0;
-  width: 250px;
-  background: white;
-  border-radius: 0 0 8px 8px;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-  max-height: 200px;
-  overflow-y: auto;
-  z-index: 1001;
-  margin-top: 5px;
-  
-  @media (max-width: 768px) {
-    width: calc(100vw - 120px);
-  }
-  
-  div {
-    padding: 8px 12px;
-    cursor: pointer;
-    border-bottom: 1px solid #f1f1f1;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    
-    &:hover {
-      background: #f9f9f9;
-    }
-    
-    &:last-child {
-      border-bottom: none;
-    }
-  }
-`;
-
 const MobileSearchButton = styled.button`
   display: none;
   
@@ -182,6 +146,42 @@ const NoResultsMessage = styled.div`
   }
 `;
 
+// Componente per i suggerimenti di ricerca
+const SearchSuggestions = styled.div`
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 250px;
+  background: white;
+  border-radius: 0 0 8px 8px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 1001;
+  margin-top: 5px;
+  
+  @media (max-width: 768px) {
+    width: calc(100vw - 120px);
+  }
+  
+  div {
+    padding: 8px 12px;
+    cursor: pointer;
+    border-bottom: 1px solid #f1f1f1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    
+    &:hover {
+      background: #f9f9f9;
+    }
+    
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+`;
+
 // Aggiungiamo un pulsante per la geolocalizzazione
 const LocationButton = styled.button`
   position: absolute;
@@ -214,86 +214,7 @@ const LocationButton = styled.button`
   }
 `;
 
-const searchSuggestions = async (query) => {
-  if (!query || query.length < 3) {
-    setSuggestions([]);
-    setShowSuggestions(false);
-    return;
-  }
-  
-  try {
-    const response = await fetch(
-      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5`
-    );
-    
-    if (!response.ok) {
-      throw new Error('Errore nella ricerca suggerimenti');
-    }
-    
-    const data = await response.json();
-    
-    if (data && data.length > 0) {
-      setSuggestions(data.map(item => ({
-        displayName: item.display_name,
-        lat: parseFloat(item.lat),
-        lng: parseFloat(item.lon)
-      })));
-      setShowSuggestions(true);
-    } else {
-      setSuggestions([]);
-      setShowSuggestions(false);
-    }
-  } catch (error) {
-    console.error('Errore nella ricerca suggerimenti:', error);
-    setSuggestions([]);
-    setShowSuggestions(false);
-  }
-};
-
-<input 
-  type="text" 
-  placeholder="Cerca località..." 
-  value={searchQuery}
-  onChange={(e) => {
-    setSearchQuery(e.target.value);
-    searchSuggestions(e.target.value);
-  }}
-  onFocus={() => {
-    if (suggestions.length > 0) {
-      setShowSuggestions(true);
-    }
-  }}
-  disabled={isSearching}
-/>
-
-{/* Aggiungi questo componente per i suggerimenti subito dopo il form */}
-{showSuggestions && suggestions.length > 0 && (
-  <SearchSuggestions>
-    {suggestions.map((suggestion, index) => (
-      <div 
-        key={index}
-        onClick={() => {
-          setSearchQuery(suggestion.displayName.split(',')[0]);
-          setShowSuggestions(false);
-          
-          // Centra la mappa sulla posizione suggerita
-          setMapCenter([suggestion.lat, suggestion.lng]);
-          setMapZoom(13);
-          
-          // Imposta la posizione dell'utente
-          setUserLocation({
-            lat: suggestion.lat,
-            lng: suggestion.lng
-          });
-        }}
-      >
-        {suggestion.displayName}
-      </div>
-    ))}
-  </SearchSuggestions>
-)}
-
-
+// Marker personalizzato per eventi
 // Marker personalizzato per eventi
 const customIcon = new Icon({
   iconUrl: '/marker-icon-red.png',
@@ -335,7 +256,6 @@ function LocationMarker({ onLocationFound }) {
 }
 
 // Componente per centrare la mappa su una posizione
-// Componente per centrare la mappa su una posizione
 function SetViewOnClick({ coords, zoom }) {
   const map = useMap();
   useEffect(() => {
@@ -346,35 +266,18 @@ function SetViewOnClick({ coords, zoom }) {
   return null;
 }
 
-const searchLocation = async (query) => {
-  try {
-    // Usiamo Nominatim di OpenStreetMap per la geocodifica
-    const response = await fetch(
-      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`
-    );
-    
-    if (!response.ok) {
-      throw new Error('Errore nella ricerca del luogo');
-    }
-    
-    const data = await response.json();
-    
-    if (data && data.length > 0) {
-      return {
-        lat: parseFloat(data[0].lat),
-        lng: parseFloat(data[0].lon),
-        displayName: data[0].display_name
-      };
-    }
-    
-    return null;
-  } catch (error) {
-    console.error('Errore nella geocodifica:', error);
-    return null;
-  }
-};
-
-// Componenti per LocationMarker e SetViewOnClick...
+// Funzione per creare un debounce
+function debounce(func, wait) {
+  let timeout;
+  return function executedFunction(...args) {
+    const later = () => {
+      clearTimeout(timeout);
+      func(...args);
+    };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
+}
 
 const EventMap = ({ events = [], onSearch }) => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -389,7 +292,6 @@ const EventMap = ({ events = [], onSearch }) => {
   const [showRadiusCircle, setShowRadiusCircle] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState('');
-  // Nuovi stati per i suggerimenti
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   
@@ -397,326 +299,313 @@ const EventMap = ({ events = [], onSearch }) => {
   const { width } = useWindowSize();
   const isMobile = width <= 768;
 
-  // Debounce per la ricerca
-  const debouncedSearch = useCallback(
-    debounce((query) => {
-      if (query && query.length >= 3) {
-        fetchSuggestions(query);
-      } else {
-        setSuggestions([]);
-        setShowSuggestions(false);
-      }
-    }, 500),
-    []
-  );
-
-  // Funzione per creare un debounce
-  function debounce(func, wait) {
-    let timeout;
-    return function executedFunction(...args) {
-      const later = () => {
-        clearTimeout(timeout);
-        func(...args);
-      };
-      clearTimeout(timeout);
-      timeout = setTimeout(later, wait);
-    };
-  }
-
-  // Funzione per cercare suggerimenti
-  const fetchSuggestions = async (query) => {
-    try {
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5`
-      );
-      
-      if (!response.ok) {
-        throw new Error('Errore nella ricerca suggerimenti');
-      }
-      
-      const data = await response.json();
-      
-      if (data && data.length > 0) {
-        setSuggestions(data.map(item => ({
-          displayName: item.display_name,
-          lat: parseFloat(item.lat),
-          lng: parseFloat(item.lon)
-        })));
-        setShowSuggestions(true);
-      } else {
-        setSuggestions([]);
-        setShowSuggestions(false);
-      }
-    } catch (error) {
-      console.error('Errore nella ricerca suggerimenti:', error);
-      setSuggestions([]);
-      setShowSuggestions(false);
-    }
-  };
-
-  // Chiudi la barra di ricerca quando si passa alla visualizzazione desktop
-  useEffect(() => {
-    if (!isMobile && isSearchOpen) {
-      setIsSearchOpen(false);
-    }
-  }, [isMobile, isSearchOpen]);
-
-  // Richiedi la posizione dell'utente all'avvio
-  useEffect(() => {
-    requestUserLocation();
-  }, []);
-
-  // Gestisci click fuori dai suggerimenti per chiuderli
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (showSuggestions && !event.target.closest('.search-container')) {
-        setShowSuggestions(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [showSuggestions]);
-
-  // Funzione per cercare un luogo e centrare la mappa
-  const handleSearchSubmit = async (e) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      setIsSearching(true);
-      setSearchError('');
-      setShowSuggestions(false);
-      
+    // Funzione per cercare suggerimenti
+    const fetchSuggestions = async (query) => {
       try {
         const response = await fetch(
-          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&limit=1`
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5`
         );
         
         if (!response.ok) {
-          throw new Error('Errore nella ricerca del luogo');
+          throw new Error('Errore nella ricerca suggerimenti');
         }
         
         const data = await response.json();
         
         if (data && data.length > 0) {
-          const location = {
-            lat: parseFloat(data[0].lat),
-            lng: parseFloat(data[0].lon),
-            displayName: data[0].display_name
-          };
-          
-          // Aggiorna il centro della mappa e il livello di zoom
-          setMapCenter([location.lat, location.lng]);
-          setMapZoom(13); // Zoom appropriato per vedere l'area cercata
-          
-          // Imposta anche questa come nuova posizione dell'utente
-          setUserLocation({
-            lat: location.lat,
-            lng: location.lng
-          });
-          
-          // Mostra un messaggio di successo
-          console.log(`Trovato: ${location.displayName}`);
+          setSuggestions(data.map(item => ({
+            displayName: item.display_name,
+            lat: parseFloat(item.lat),
+            lng: parseFloat(item.lon)
+          })));
+          setShowSuggestions(true);
         } else {
-          setSearchError('Nessun risultato trovato per la ricerca');
+          setSuggestions([]);
+          setShowSuggestions(false);
         }
       } catch (error) {
-        console.error('Errore nella ricerca:', error);
-        setSearchError('Si è verificato un errore durante la ricerca');
-      } finally {
-        setIsSearching(false);
+        console.error('Errore nella ricerca suggerimenti:', error);
+        setSuggestions([]);
+        setShowSuggestions(false);
+      }
+    };
+  
+    // Debounce per la ricerca di suggerimenti
+    const debouncedSearch = useCallback(
+      debounce((query) => {
+        if (query && query.length >= 3) {
+          fetchSuggestions(query);
+        } else {
+          setSuggestions([]);
+          setShowSuggestions(false);
+        }
+      }, 500),
+      []
+    );
+  
+    // Chiudi la barra di ricerca quando si passa alla visualizzazione desktop
+    useEffect(() => {
+      if (!isMobile && isSearchOpen) {
+        setIsSearchOpen(false);
+      }
+    }, [isMobile, isSearchOpen]);
+  
+    // Richiedi la posizione dell'utente all'avvio
+    useEffect(() => {
+      requestUserLocation();
+    }, []);
+  
+    // Gestisci click fuori dai suggerimenti per chiuderli
+    useEffect(() => {
+      const handleClickOutside = (event) => {
+        if (showSuggestions && !event.target.closest('.search-container')) {
+          setShowSuggestions(false);
+        }
+      };
+  
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }, [showSuggestions]);
+  
+    // Funzione per cercare un luogo e centrare la mappa
+    const handleSearchSubmit = async (e) => {
+      e.preventDefault();
+      if (searchQuery.trim()) {
+        setIsSearching(true);
+        setSearchError('');
+        setShowSuggestions(false);
         
-        // Chiudere la barra di ricerca mobile dopo la ricerca
-        if (isMobile) {
-          setIsSearchOpen(false);
+        try {
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&limit=1`
+          );
+          
+          if (!response.ok) {
+            throw new Error('Errore nella ricerca del luogo');
+          }
+          
+          const data = await response.json();
+          
+          if (data && data.length > 0) {
+            const location = {
+              lat: parseFloat(data[0].lat),
+              lng: parseFloat(data[0].lon),
+              displayName: data[0].display_name
+            };
+            
+            // Aggiorna il centro della mappa e il livello di zoom
+            setMapCenter([location.lat, location.lng]);
+            setMapZoom(13); // Zoom appropriato per vedere l'area cercata
+            
+            // Imposta anche questa come nuova posizione dell'utente
+            setUserLocation({
+              lat: location.lat,
+              lng: location.lng
+            });
+            
+            // Mostra un messaggio di successo
+            console.log(`Trovato: ${location.displayName}`);
+          } else {
+            setSearchError('Nessun risultato trovato per la ricerca');
+          }
+        } catch (error) {
+          console.error('Errore nella ricerca:', error);
+          setSearchError('Si è verificato un errore durante la ricerca');
+        } finally {
+          setIsSearching(false);
+          
+          // Chiudere la barra di ricerca mobile dopo la ricerca
+          if (isMobile) {
+            setIsSearchOpen(false);
+          }
         }
       }
-    }
-  };
-
-  const toggleMobileSearch = () => {
-    setIsSearchOpen(!isSearchOpen);
-  };
-
-  // Gestisci il click su un suggerimento
-  const handleSuggestionClick = (suggestion) => {
-    setSearchQuery(suggestion.displayName.split(',')[0]);
-    setShowSuggestions(false);
-    
-    // Centra la mappa sulla posizione suggerita
-    setMapCenter([suggestion.lat, suggestion.lng]);
-    setMapZoom(13);
-    
-    // Imposta la posizione dell'utente
-    setUserLocation({
-      lat: suggestion.lat,
-      lng: suggestion.lng
-    });
-  };
-
-  const handleApplyFilters = (filters) => {
-    // Implementa la logica di filtro qui
-    let filtered = [...events];
-    
-    // Filtro per categorie
-    if (filters.categories.length > 0) {
-      filtered = filtered.filter(event => 
-        event.categories.some(cat => filters.categories.includes(cat.id))
-      );
-    }
-    
-    // Filtro per date
-    if (filters.startDate) {
-      const startDate = new Date(filters.startDate);
-      filtered = filtered.filter(event => new Date(event.date) >= startDate);
-    }
-    
-    if (filters.endDate) {
-      const endDate = new Date(filters.endDate);
-      endDate.setHours(23, 59, 59); // Fine giornata
-      filtered = filtered.filter(event => new Date(event.date) <= endDate);
-    }
-    
-    // Filtro per raggio di ricerca
-    if (userLocation && filters.searchRadius) {
-      setSearchRadius(filters.searchRadius);
-      setShowRadiusCircle(true);
+    };
+  
+    const toggleMobileSearch = () => {
+      setIsSearchOpen(!isSearchOpen);
+    };
+  
+    // Gestisci il click su un suggerimento
+    const handleSuggestionClick = (suggestion) => {
+      setSearchQuery(suggestion.displayName.split(',')[0]);
+      setShowSuggestions(false);
       
-      // Filtra gli eventi entro il raggio specificato
-      filtered = filtered.filter(event => {
-        // Calcola la distanza tra l'evento e la posizione dell'utente
-        const distance = calculateDistance(
-          userLocation.lat, 
-          userLocation.lng, 
-          event.latitude, 
-          event.longitude
-        );
-        
-        // Converti in km e verifica se è nel raggio
-        return distance <= filters.searchRadius;
+      // Centra la mappa sulla posizione suggerita
+      setMapCenter([suggestion.lat, suggestion.lng]);
+      setMapZoom(13);
+      
+      // Imposta la posizione dell'utente
+      setUserLocation({
+        lat: suggestion.lat,
+        lng: suggestion.lng
       });
-    } else {
-      setShowRadiusCircle(false);
-    }
-    
-    setFilteredEvents(filtered);
-    setHasAppliedFilters(true);
-    setIsFilterOpen(false);
-  };
-
-  // Funzione per calcolare la distanza tra due punti (formula di Haversine)
-  const calculateDistance = (lat1, lon1, lat2, lon2) => {
-    const R = 6371; // Raggio della Terra in km
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLon = (lon2 - lon1) * Math.PI / 180;
-    const a = 
-      Math.sin(dLat/2) * Math.sin(dLat/2) +
-      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-      Math.sin(dLon/2) * Math.sin(dLon/2); 
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
-    const distance = R * c; // Distanza in km
-    return distance;
-  };
-
-  const resetFilters = () => {
-    setFilteredEvents([]);
-    setHasAppliedFilters(false);
-    setShowRadiusCircle(false);
-  };
-
-  const handleMarkerClick = (event) => {
-    navigate(`/event/${event.id}`);
-  };
-
-  const handleLocationFound = (location) => {
-    setUserLocation(location);
-    setMapCenter([location.lat, location.lng]);
-    setMapZoom(11); // Zoom per coprire circa 50 km quadrati
-  };
-
-  const requestUserLocation = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const location = {
-            lat: position.coords.latitude,
-            lng: position.coords.longitude
-          };
-          handleLocationFound(location);
-        },
-        (error) => {
-          console.error("Errore di geolocalizzazione:", error.message);
-          console.log("Impossibile ottenere la posizione automaticamente");
-        },
-        { enableHighAccuracy: true }
-      );
-    } else {
-      console.log("La geolocalizzazione non è supportata dal tuo browser.");
-    }
-  };
-
-  // Determina quali eventi mostrare
-  const displayEvents = hasAppliedFilters ? filteredEvents : events;
-  const noResults = hasAppliedFilters && filteredEvents.length === 0;
-
-  return (
-    <MapWrapper>
-      <TopControlsContainer>
-        <div style={{ display: 'flex', alignItems: 'center', pointerEvents: 'auto' }}>
-          {/* Pulsante per aprire/chiudere la ricerca su mobile */}
-          {isMobile && (
-            <MobileSearchButton 
-              onClick={toggleMobileSearch}
-              title={isSearchOpen ? "Chiudi ricerca" : "Apri ricerca"}
-            >
-              {isSearchOpen ? "✕" : "🔍"}
-            </MobileSearchButton>
-          )}
+    };
+  
+    const handleApplyFilters = (filters) => {
+      // Implementa la logica di filtro qui
+      let filtered = [...events];
+      
+      // Filtro per categorie
+      if (filters.categories.length > 0) {
+        filtered = filtered.filter(event => 
+          event.categories.some(cat => filters.categories.includes(cat.id))
+        );
+      }
+      
+      // Filtro per date
+      if (filters.startDate) {
+        const startDate = new Date(filters.startDate);
+        filtered = filtered.filter(event => new Date(event.date) >= startDate);
+      }
+      
+      if (filters.endDate) {
+        const endDate = new Date(filters.endDate);
+        endDate.setHours(23, 59, 59); // Fine giornata
+        filtered = filtered.filter(event => new Date(event.date) <= endDate);
+      }
+      
+      // Filtro per raggio di ricerca
+      if (userLocation && filters.searchRadius) {
+        setSearchRadius(filters.searchRadius);
+        setShowRadiusCircle(true);
+        
+        // Filtra gli eventi entro il raggio specificato
+        filtered = filtered.filter(event => {
+          // Calcola la distanza tra l'evento e la posizione dell'utente
+          const distance = calculateDistance(
+            userLocation.lat, 
+            userLocation.lng, 
+            event.latitude, 
+            event.longitude
+          );
           
-          <SearchBar isSearchOpen={isSearchOpen}>
-            <form onSubmit={handleSearchSubmit} className="search-container">
-              <input 
-                type="text" 
-                placeholder="Cerca località..." 
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  debouncedSearch(e.target.value);
-                }}
-                onFocus={() => {
-                  if (suggestions.length > 0) {
-                    setShowSuggestions(true);
-                  }
-                }}
-                disabled={isSearching}
-              />
-              <button 
-                type="submit" 
-                title="Cerca"
-                style={{ 
-                  display: isMobile && !isSearchOpen ? 'none' : 'flex' 
-                }}
-                disabled={isSearching}
+          // Converti in km e verifica se è nel raggio
+          return distance <= filters.searchRadius;
+        });
+      } else {
+        setShowRadiusCircle(false);
+      }
+      
+      setFilteredEvents(filtered);
+      setHasAppliedFilters(true);
+      setIsFilterOpen(false);
+    };
+  
+    // Funzione per calcolare la distanza tra due punti (formula di Haversine)
+    const calculateDistance = (lat1, lon1, lat2, lon2) => {
+      const R = 6371; // Raggio della Terra in km
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = 
+        Math.sin(dLat/2) * Math.sin(dLat/2) +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+        Math.sin(dLon/2) * Math.sin(dLon/2); 
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+      const distance = R * c; // Distanza in km
+      return distance;
+    };
+  
+    const resetFilters = () => {
+      setFilteredEvents([]);
+      setHasAppliedFilters(false);
+      setShowRadiusCircle(false);
+    };
+  
+    const handleMarkerClick = (event) => {
+      navigate(`/event/${event.id}`);
+    };
+  
+    const handleLocationFound = (location) => {
+      setUserLocation(location);
+      setMapCenter([location.lat, location.lng]);
+      setMapZoom(11); // Zoom per coprire circa 50 km quadrati
+    };
+  
+    const requestUserLocation = () => {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const location = {
+              lat: position.coords.latitude,
+              lng: position.coords.longitude
+            };
+            handleLocationFound(location);
+          },
+          (error) => {
+            console.error("Errore di geolocalizzazione:", error.message);
+            console.log("Impossibile ottenere la posizione automaticamente");
+          },
+          { enableHighAccuracy: true }
+        );
+      } else {
+        console.log("La geolocalizzazione non è supportata dal tuo browser.");
+      }
+    };
+  
+    // Determina quali eventi mostrare
+    const displayEvents = hasAppliedFilters ? filteredEvents : events;
+    const noResults = hasAppliedFilters && filteredEvents.length === 0;
+  
+    return (
+      <MapWrapper>
+        <TopControlsContainer>
+          <div style={{ display: 'flex', alignItems: 'center', pointerEvents: 'auto' }}>
+            {/* Pulsante per aprire/chiudere la ricerca su mobile */}
+            {isMobile && (
+              <MobileSearchButton 
+                onClick={toggleMobileSearch}
+                title={isSearchOpen ? "Chiudi ricerca" : "Apri ricerca"}
               >
-                {isSearching ? "⏳" : "🔍"}
-              </button>
-              
-              {/* Suggerimenti */}
-              {showSuggestions && suggestions.length > 0 && (
-                <SearchSuggestions>
-                  {suggestions.map((suggestion, index) => (
-                    <div 
-                      key={index}
-                      onClick={() => handleSuggestionClick(suggestion)}
-                    >
-                      {suggestion.displayName}
-                    </div>
-                  ))}
-                </SearchSuggestions>
-              )}
-            </form>
-            <button 
+                {isSearchOpen ? "✕" : "🔍"}
+              </MobileSearchButton>
+            )}
+            
+            <SearchBar isSearchOpen={isSearchOpen}>
+              <form onSubmit={handleSearchSubmit} className="search-container">
+                <input 
+                  type="text" 
+                  placeholder="Cerca località..." 
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    debouncedSearch(e.target.value);
+                  }}
+                  onFocus={() => {
+                    if (suggestions.length > 0) {
+                      setShowSuggestions(true);
+                    }
+                  }}
+                  disabled={isSearching}
+                />
+                <button 
+                  type="submit" 
+                  title="Cerca"
+                  style={{ 
+                    display: isMobile && !isSearchOpen ? 'none' : 'flex' 
+                  }}
+                  disabled={isSearching}
+                >
+                  {isSearching ? "⏳" : "🔍"}
+                </button>
+                
+                {/* Suggerimenti */}
+                {showSuggestions && suggestions.length > 0 && (
+                  <SearchSuggestions>
+                    {suggestions.map((suggestion, index) => (
+                      <div 
+                        key={index}
+                        onClick={() => handleSuggestionClick(suggestion)}
+                      >
+                        {suggestion.displayName}
+                      </div>
+                    ))}
+                  </SearchSuggestions>
+                )}
+              </form>
+              <button 
               onClick={() => setIsFilterOpen(!isFilterOpen)} 
               title="Filtri"
               style={{ 
@@ -854,3 +743,5 @@ const EventMap = ({ events = [], onSearch }) => {
 };
 
 export default EventMap;
+
+          
