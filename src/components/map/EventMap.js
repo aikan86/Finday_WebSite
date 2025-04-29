@@ -1,11 +1,13 @@
+
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents, Circle } from 'react-leaflet';
 import { Icon } from 'leaflet';
 import styled from 'styled-components';
 import FilterPanel from './FilterPanel';
-import InfoBox from './InfoBox'; 
 import { useNavigate } from 'react-router-dom';
 import useWindowSize from '../../hooks/useWindowSize';
+import InfoBox from './InfoBox'; 
 
 const MapWrapper = styled.div`
   height: 100vh;
@@ -280,7 +282,8 @@ function debounce(func, wait) {
 
 const EventMap = ({ events = [], onSearch }) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const isMobile = width <= 768;
+  const [isFilterOpen, setIsFilterOpen] = useState(!isMobile);  
   const [filteredEvents, setFilteredEvents] = useState([]);
   const [hasAppliedFilters, setHasAppliedFilters] = useState(false);
   const [mapCenter, setMapCenter] = useState([44.1155, 8.9442]);
@@ -661,14 +664,14 @@ const EventMap = ({ events = [], onSearch }) => {
       >
         📍
       </LocationButton>
-      
-      <InfoBox isMobile={isMobile} />
 
+      <InfoBox isMobile={isMobile} />
+      
       <MapContainer 
-          center={mapCenter} 
-          zoom={mapZoom} 
-          style={{ height: '100%', width: '100%' }}
-          zoomControl={false}
+        center={mapCenter} 
+        zoom={mapZoom} 
+        style={{ height: '100%', width: '100%' }}
+        zoomControl={false}
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
