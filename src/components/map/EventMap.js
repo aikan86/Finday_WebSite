@@ -524,10 +524,15 @@ const EventMap = ({ events = [], onSearch }) => {
       setShowRadiusCircle(false);
     };
   
-    const handleMarkerClick = (event) => {
+    const handleMarkerClick = (eventItem) => {
       setEventLoading(true);
       setEventError(null);
-      navigate(`/event/${event.id}`);
+      
+      setTimeout(() => {
+        setSelectedEvent(eventItem);
+        setEventLoading(false);
+        setIsSidebarOpen(true);
+      }, 300); 
     };
   
     const handleCloseSidebar = () => {
