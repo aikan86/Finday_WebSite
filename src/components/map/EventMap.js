@@ -6,6 +6,9 @@ import FilterPanel from './FilterPanel';
 import { useNavigate } from 'react-router-dom';
 import useWindowSize from '../../hooks/useWindowSize';
 
+const [suggestions, setSuggestions] = useState([]);
+const [showSuggestions, setShowSuggestions] = useState(false);
+
 const MapWrapper = styled.div`
   height: 100vh;
   width: 100%;
@@ -57,9 +60,11 @@ const LogoOverlay = styled.div`
 const SearchBar = styled.div`
   display: flex;
   pointer-events: auto;
+  position: relative; /* Importante per posizionamento dei suggerimenti */
   
   form {
     display: flex;
+    position: relative; /* Importante per posizionamento dei suggerimenti */
   }
   
   input {
@@ -92,6 +97,41 @@ const SearchBar = styled.div`
     align-items: center;
     justify-content: center;
     font-size: 16px;
+  }
+`;
+
+const SearchSuggestions = styled.div`
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 250px; /* Stessa larghezza dell'input */
+  background: white;
+  border-radius: 0 0 8px 8px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 1001;
+  margin-top: 5px;
+  
+  @media (max-width: 768px) {
+    width: calc(100vw - 120px); /* Stessa larghezza dell'input mobile */
+  }
+  
+  div {
+    padding: 8px 12px;
+    cursor: pointer;
+    border-bottom: 1px solid #f1f1f1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    
+    &:hover {
+      background: #f9f9f9;
+    }
+    
+    &:last-child {
+      border-bottom: none;
+    }
   }
 `;
 
@@ -163,7 +203,96 @@ const LocationButton = styled.button`
   &:hover {
     background: #f5f5f5;
   }
+  
+  @media (max-width: 768px) {
+    bottom: 25px;
+    right: 15px;
+    width: 45px;
+    height: 45px;
+    font-size: 22px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
 `;
+
+const searchSuggestions = async (query) => {
+  if (!query || query.length < 3) {
+    setSuggestions([]);
+    setShowSuggestions(false);
+    return;
+  }
+  
+  try {
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5`
+    );
+    
+    if (!response.ok) {
+      throw new Error('Errore nella ricerca suggerimenti');
+    }
+    
+    const data = await response.json();
+    
+    if (data && data.length > 0) {
+      setSuggestions(data.map(item => ({
+        displayName: item.display_name,
+        lat: parseFloat(item.lat),
+        lng: parseFloat(item.lon)
+      })));
+      setShowSuggestions(true);
+    } else {
+      setSuggestions([]);
+      setShowSuggestions(false);
+    }
+  } catch (error) {
+    console.error('Errore nella ricerca suggerimenti:', error);
+    setSuggestions([]);
+    setShowSuggestions(false);
+  }
+};
+
+<input 
+  type="text" 
+  placeholder="Cerca località..." 
+  value={searchQuery}
+  onChange={(e) => {
+    setSearchQuery(e.target.value);
+    searchSuggestions(e.target.value);
+  }}
+  onFocus={() => {
+    if (suggestions.length > 0) {
+      setShowSuggestions(true);
+    }
+  }}
+  disabled={isSearching}
+/>
+
+{/* Aggiungi questo componente per i suggerimenti subito dopo il form */}
+{showSuggestions && suggestions.length > 0 && (
+  <SearchSuggestions>
+    {suggestions.map((suggestion, index) => (
+      <div 
+        key={index}
+        onClick={() => {
+          setSearchQuery(suggestion.displayName.split(',')[0]);
+          setShowSuggestions(false);
+          
+          // Centra la mappa sulla posizione suggerita
+          setMapCenter([suggestion.lat, suggestion.lng]);
+          setMapZoom(13);
+          
+          // Imposta la posizione dell'utente
+          setUserLocation({
+            lat: suggestion.lat,
+            lng: suggestion.lng
+          });
+        }}
+      >
+        {suggestion.displayName}
+      </div>
+    ))}
+  </SearchSuggestions>
+)}
+
 
 // Marker personalizzato per eventi
 const customIcon = new Icon({
@@ -419,6 +548,86 @@ const EventMap = ({ events = [], onSearch }) => {
       console.log("La geolocalizzazione non è supportata dal tuo browser.");
     }
   };
+
+  const searchSuggestions = async (query) => {
+  if (!query || query.length < 3) {
+    setSuggestions([]);
+    setShowSuggestions(false);
+    return;
+  }
+  
+  try {
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5`
+    );
+    
+    if (!response.ok) {
+      throw new Error('Errore nella ricerca suggerimenti');
+    }
+    
+    const data = await response.json();
+    
+    if (data && data.length > 0) {
+      setSuggestions(data.map(item => ({
+        displayName: item.display_name,
+        lat: parseFloat(item.lat),
+        lng: parseFloat(item.lon)
+      })));
+      setShowSuggestions(true);
+    } else {
+      setSuggestions([]);
+      setShowSuggestions(false);
+    }
+  } catch (error) {
+    console.error('Errore nella ricerca suggerimenti:', error);
+    setSuggestions([]);
+    setShowSuggestions(false);
+  }
+};
+
+// Aggiorna input per usare i suggerimenti
+<input 
+  type="text" 
+  placeholder="Cerca località..." 
+  value={searchQuery}
+  onChange={(e) => {
+    setSearchQuery(e.target.value);
+    searchSuggestions(e.target.value);
+  }}
+  onFocus={() => {
+    if (suggestions.length > 0) {
+      setShowSuggestions(true);
+    }
+  }}
+  disabled={isSearching}
+/>
+
+{/* Aggiungi questo componente per i suggerimenti subito dopo il form */}
+{showSuggestions && suggestions.length > 0 && (
+  <SearchSuggestions>
+    {suggestions.map((suggestion, index) => (
+      <div 
+        key={index}
+        onClick={() => {
+          setSearchQuery(suggestion.displayName.split(',')[0]);
+          setShowSuggestions(false);
+          
+          // Centra la mappa sulla posizione suggerita
+          setMapCenter([suggestion.lat, suggestion.lng]);
+          setMapZoom(13);
+          
+          // Imposta la posizione dell'utente
+          setUserLocation({
+            lat: suggestion.lat,
+            lng: suggestion.lng
+          });
+        }}
+      >
+        {suggestion.displayName}
+      </div>
+    ))}
+  </SearchSuggestions>
+)}
 
   // Determina quali eventi mostrare
   const displayEvents = hasAppliedFilters ? filteredEvents : events;
