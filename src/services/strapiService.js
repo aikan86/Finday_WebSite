@@ -6,12 +6,13 @@ const API_URL = 'https://finday-cms.onrender.com/api'; // In produzione
 
 export const fetchEvents = async () => {
   try {
-    const response = await axios.get(`${API_URL}/eventis`, {
-      params: {
-        populate: ['categories', 'image', 'gallery'],
-      }
-    });
+    const url = `${API_URL}/eventis?populate[]=categories&populate[]=image&populate[]=gallery`;
+    console.log('Requesting URL:', url);
     
+    const response = await axios.get(url);
+    console.log('Response status:', response.status);
+    console.log('Response headers:', response.headers);
+    console.log('Response data structure:', Object.keys(response.data));
     // Trasforma i dati nella struttura attesa dall'app
     return response.data.data.map(item => ({
       id: item.id,
@@ -45,11 +46,7 @@ export const fetchEvents = async () => {
 
 export const fetchCategories = async () => {
   try {
-    const response = await axios.get(`${API_URL}/categorie`, {
-      params: {
-        populate: ['icon']
-      }
-    });
+    const response = await axios.get(`${API_URL}/categorie?populate[]=icon`);
     
     // Trasforma i dati nella struttura attesa dall'app
     return response.data.data.map(item => ({
