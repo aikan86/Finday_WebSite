@@ -42,7 +42,16 @@ const TopControlsContainer = styled.div`
   align-items: center;
   justify-content: space-between;
   pointer-events: none;
+  
+  @media (max-width: 768px) {
+    top: env(safe-area-inset-top, 0); /* Aggiunta supporto per notch e barre di stato */
+    padding-top: calc(10px + env(safe-area-inset-top, 0)); /* Padding aggiuntivo per dispositivi con notch */
+    height: auto; /* Altezza automatica per adattarsi al contenuto */
+    min-height: 60px; /* Altezza minima */
+    padding-bottom: 15px; /* Più padding in basso per mostrare meglio il gradiente */
+  }
 `;
+
 
 const LogoOverlay = styled.div`
   margin-right: 20px;
