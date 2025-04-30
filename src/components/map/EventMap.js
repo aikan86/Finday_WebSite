@@ -1,4 +1,4 @@
-import { fetchEvents, fetchCategories } from '../services/strapiService';
+import { fetchEvents, fetchCategories } from '../../services/strapiService';
 import React, { useState, useEffect, useCallback } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents, Circle } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-markercluster'; // Importa il componente per il clustering
