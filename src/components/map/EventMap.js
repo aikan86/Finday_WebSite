@@ -13,6 +13,7 @@ import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
 import L from 'leaflet';
 import AdBanner from '../common/AdBanner';
+import { COLORS } from '../../styles/Colors';
 
 const MapWrapper = styled.div`
   height: 100vh;
