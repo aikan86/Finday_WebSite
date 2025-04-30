@@ -4,7 +4,7 @@ import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { COLORS } from '../../styles/Colors';
 
-// Mantieni tutti i tuoi styled components originali...
+// Definizioni di styled components
 const FilterPanelContainer = styled.div`
   position: absolute;
   top: 70px;
@@ -26,7 +26,148 @@ const FilterPanelContainer = styled.div`
   }
 `;
 
-// Continua con gli altri styled components che hai nel tuo componente originale...
+const FilterHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 15px;
+  border-bottom: 1px solid #eee;
+  
+  h2 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+  }
+`;
+
+const CloseButton = styled.button`
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: #666;
+  
+  &:hover {
+    color: #333;
+  }
+`;
+
+const FilterSection = styled.div`
+  padding: 12px 15px;
+  border-bottom: 1px solid #eee;
+  
+  h3 {
+    margin: 0 0 10px 0;
+    font-size: 16px;
+    font-weight: 500;
+  }
+`;
+
+const CategoryList = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+`;
+
+const CategoryItem = styled.div`
+  display: flex;
+  align-items: center;
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background-color: ${props => props.isSelected ? props.color || '#f39c12' : '#f1f1f1'};
+  color: ${props => props.isSelected ? 'white' : '#333'};
+  
+  &:hover {
+    background-color: ${props => props.isSelected ? props.color || '#f39c12' : '#e0e0e0'};
+  }
+`;
+
+const DateContainer = styled.div`
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+`;
+
+const DateLabel = styled.label`
+  width: 40px;
+  font-size: 14px;
+`;
+
+const DateInput = styled.input`
+  flex: 1;
+  padding: 6px 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+`;
+
+const RadiusContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+`;
+
+const RadiusValue = styled.div`
+  text-align: center;
+  font-size: 16px;
+  font-weight: 500;
+`;
+
+const RadiusSlider = styled.input`
+  width: 100%;
+  -webkit-appearance: none;
+  height: 4px;
+  background: #ddd;
+  border-radius: 2px;
+  
+  &::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: ${COLORS.primary || '#f39c12'};
+    cursor: pointer;
+  }
+  
+  &::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: ${COLORS.primary || '#f39c12'};
+    cursor: pointer;
+    border: none;
+  }
+`;
+
+const RadiusLabels = styled.div`
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #666;
+`;
+
+const ApplyButton = styled.button`
+  display: block;
+  width: calc(100% - 30px);
+  margin: 15px;
+  padding: 10px;
+  background-color: ${COLORS.primary || '#f39c12'};
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  
+  &:hover {
+    background-color: ${COLORS.primaryDark || '#e67e22'};
+  }
+`;
 
 const FilterPanel = ({ isOpen, onClose, onApplyFilters, userLocation, categories = [] }) => {
   // Stati originali
@@ -81,17 +222,17 @@ const FilterPanel = ({ isOpen, onClose, onApplyFilters, userLocation, categories
             <CategoryItem 
               key={category.id}
               isSelected={selectedCategories.includes(category.id)}
-              color={category.color || '#f39c12'} // Colore di default se non specificato
+              color={category.attributes?.colore || '#f39c12'} // Adattato per struttura Strapi
               onClick={() => toggleCategory(category.id)}
             >
-              {category.icon && (
+              {category.attributes?.icona?.data && (
                 <img 
-                  src={category.icon} 
-                  alt={category.name} 
+                  src={`https://finday-cms.onrender.com${category.attributes.icona.data.attributes.url}`}
+                  alt={category.attributes?.nome}
                   style={{ width: 20, height: 20, marginRight: 8 }}
                 />
               )}
-              {category.name}
+                            {category.attributes?.nome || 'Categoria'}
             </CategoryItem>
           ))}
           
