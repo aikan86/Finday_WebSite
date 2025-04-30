@@ -303,7 +303,7 @@ function debounce(func, wait) {
   };
 }
 
-const EventMap = ({ events = [], onSearch }) => {
+const EventMap = ({ events: propEvents = [], onSearch }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isFilterOpen, setIsFilterOpen] = useState(true);
   const [filteredEvents, setFilteredEvents] = useState([]);
@@ -326,7 +326,9 @@ const EventMap = ({ events = [], onSearch }) => {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  
+  const [strapiEvents, setStrapiEvents] = useState([]);
+  const [strapiCategories, setStrapiCategories] = useState([]);
+  const [loadingStrapi, setLoadingStrapi] = useState(false);
   const navigate = useNavigate();
   const { width } = useWindowSize();
   const isMobile = width <= 768;
@@ -375,6 +377,31 @@ const EventMap = ({ events = [], onSearch }) => {
       []
     );
   
+    useEffect(() => {
+      const loadStrapiData = async () => {
+        setLoadingStrapi(true);
+        try {
+          const [eventsData, categoriesData] = await Promise.all([
+            fetchEvents(),
+            fetchCategories()
+          ]);
+          
+          console.log('Eventi da Strapi:', eventsData);
+          console.log('Categorie da Strapi:', categoriesData);
+          
+          setStrapiEvents(eventsData);
+          setStrapiCategories(categoriesData);
+        } catch (error) {
+          console.error('Errore nel caricamento dati da Strapi:', error);
+        } finally {
+          setLoadingStrapi(false);
+        }
+      };
+      
+      loadStrapiData();
+    }, []);
+    
+
     // Chiudi la barra di ricerca quando si passa alla visualizzazione desktop
     useEffect(() => {
       if (!isMobile && isSearchOpen) {
@@ -665,7 +692,7 @@ const EventMap = ({ events = [], onSearch }) => {
           onClose={() => setIsFilterOpen(false)}
           onApplyFilters={handleApplyFilters}
           userLocation={userLocation}
-          categories={categories} // Passa le categorie recuperate da Strapi
+          categories={strapiCategories} // Passa le categorie da Strapi
         />
         
         {/* ... Resto del codice */}
