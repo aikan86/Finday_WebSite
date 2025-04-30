@@ -698,10 +698,11 @@ const EventMap = ({ events: propEvents = [], onSearch }) => {
         {/* ... Resto del codice */}
         
         <MapContainer 
-          center={mapCenter} 
-          zoom={mapZoom} 
-          style={{ height: '100%', width: '100%' }}
-          zoomControl={false}
+            center={mapCenter} 
+            zoom={mapZoom} 
+            style={{ height: '100%', width: '100%' }}
+            zoomControl={false}
+            maxZoom={18} // Aggiungi questa riga
         >
           {/* ... Contenuti esistenti */}
           
