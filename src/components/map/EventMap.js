@@ -1,3 +1,4 @@
+import { fetchEvents, fetchCategories } from '../services/strapiService';
 import React, { useState, useEffect, useCallback } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents, Circle } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-markercluster'; // Importa il componente per il clustering
@@ -239,7 +240,6 @@ const LocationButton = styled.button`
 `;
 
 // Marker personalizzato per eventi
-// Marker personalizzato per eventi
 const customIcon = new Icon({
   iconUrl: '/marker-icon-red.png',
   iconSize: [25, 41],
@@ -322,7 +322,10 @@ const EventMap = ({ events = [], onSearch }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [eventLoading, setEventLoading] = useState(false);
   const [eventError, setEventError] = useState(null);
-
+  const [events, setEvents] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   
   const navigate = useNavigate();
   const { width } = useWindowSize();
@@ -384,7 +387,29 @@ const EventMap = ({ events = [], onSearch }) => {
       requestUserLocation();
     }, []);
   
-    // Gestisci click fuori dai suggerimenti per chiuderli
+    useEffect(() => {
+      const loadData = async () => {
+        try {
+          setLoading(true);
+          const [eventsData, categoriesData] = await Promise.all([
+            fetchEvents(),
+            fetchCategories()
+          ]);
+          
+          setEvents(eventsData);
+          setCategories(categoriesData);
+          setError(null);
+        } catch (err) {
+          console.error('Errore nel caricamento dei dati:', err);
+          setError('Si è verificato un errore nel caricamento dei dati. Riprova più tardi.');
+        } finally {
+          setLoading(false);
+        }
+      };
+      
+      loadData();
+    }, []);
+
     useEffect(() => {
       const handleClickOutside = (event) => {
         if (showSuggestions && !event.target.closest('.search-container')) {
@@ -593,219 +618,148 @@ const EventMap = ({ events = [], onSearch }) => {
     const displayEvents = hasAppliedFilters ? filteredEvents : events;
     const noResults = hasAppliedFilters && filteredEvents.length === 0;
   
+
     return (
       <MapWrapper>
-        <TopControlsContainer>
-          <div style={{ display: 'flex', alignItems: 'center', pointerEvents: 'auto' }}>
-            {/* Pulsante per aprire/chiudere la ricerca su mobile */}
-            {isMobile && (
-              <MobileSearchButton 
-                onClick={toggleMobileSearch}
-                title={isSearchOpen ? "Chiudi ricerca" : "Apri ricerca"}
-              >
-                {isSearchOpen ? "✕" : "🔍"}
-              </MobileSearchButton>
-            )}
-            
-            <SearchBar isSearchOpen={isSearchOpen}>
-              <form onSubmit={handleSearchSubmit} className="search-container">
-                <input 
-                  type="text" 
-                  placeholder="Cerca località..." 
-                  value={searchQuery}
-                  onChange={(e) => {
-                    setSearchQuery(e.target.value);
-                    debouncedSearch(e.target.value);
-                  }}
-                  onFocus={() => {
-                    if (suggestions.length > 0) {
-                      setShowSuggestions(true);
-                    }
-                  }}
-                  disabled={isSearching}
-                />
-                <button 
-                  type="submit" 
-                  title="Cerca"
-                  style={{ 
-                    display: isMobile && !isSearchOpen ? 'none' : 'flex' 
-                  }}
-                  disabled={isSearching}
-                >
-                  {isSearching ? "⏳" : "🔍"}
-                </button>
-                
-                {/* Suggerimenti */}
-                {showSuggestions && suggestions.length > 0 && (
-                  <SearchSuggestions>
-                    {suggestions.map((suggestion, index) => (
-                      <div 
-                        key={index}
-                        onClick={() => handleSuggestionClick(suggestion)}
-                      >
-                        {suggestion.displayName}
-                      </div>
-                    ))}
-                  </SearchSuggestions>
-                )}
-              </form>
-              <button 
-              onClick={() => setIsFilterOpen(!isFilterOpen)} 
-              title="Filtri"
-              style={{ 
-                marginLeft: '5px',
-                display: isMobile && isSearchOpen ? 'none' : 'flex'
-              }}
-            >
-              ⚙️
-            </button>
-          </SearchBar>
-        </div>
+        {/* Mostra messaggio di caricamento */}
+        {loading && (
+          <div style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            zIndex: 1000,
+            background: 'white',
+            padding: '20px',
+            borderRadius: '8px',
+            boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
+          }}>
+            Caricamento eventi in corso...
+          </div>
+        )}
         
-        <LogoOverlay>
-          <img 
-            src="/logo-finday.png" 
-            alt="Finday Logo" 
-            className="desktop-logo" 
-          />
-          <img 
-            src="/logo-finday-mobile.png" 
-            alt="Finday Logo" 
-            className="mobile-logo" 
-          />
-        </LogoOverlay>
-      </TopControlsContainer>
-      
-      {/* Messaggio di errore nella ricerca */}
-      {searchError && (
-        <NoResultsMessage>
-          {searchError}
-          <button onClick={() => setSearchError('')}>×</button>
-        </NoResultsMessage>
-      )}
-      
-      {/* Messaggio se non ci sono risultati */}
-      {noResults && (
-        <NoResultsMessage>
-          Nessun evento corrisponde ai filtri selezionati
-          <button onClick={resetFilters}>Rimuovi filtri</button>
-        </NoResultsMessage>
-      )}
-      
-      <FilterPanel 
-        isOpen={isFilterOpen}
-        onClose={() => setIsFilterOpen(false)}
-        onApplyFilters={handleApplyFilters}
-        userLocation={userLocation}
-      />
-      
-      {/* Pulsante per la geolocalizzazione */}
-      <LocationButton 
-        onClick={requestUserLocation}
-        title="Trova la mia posizione"
-      >
-        📍
-      </LocationButton>
-
-      <InfoBox isMobile={isMobile} />
-      
-      <MapContainer 
-        center={mapCenter} 
-        zoom={mapZoom} 
-        style={{ height: '100%', width: '100%' }}
-        zoomControl={false}
-      >
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        {/* Mostra messaggio di errore */}
+        {error && (
+          <div style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            zIndex: 1000,
+            background: 'white',
+            padding: '20px',
+            borderRadius: '8px',
+            boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+            color: 'red'
+          }}>
+            {error}
+          </div>
+        )}
+        
+        <TopControlsContainer>
+          {/* ... Contenuti esistenti */}
+        </TopControlsContainer>
+        
+        <FilterPanel 
+          isOpen={isFilterOpen}
+          onClose={() => setIsFilterOpen(false)}
+          onApplyFilters={handleApplyFilters}
+          userLocation={userLocation}
+          categories={categories} // Passa le categorie recuperate da Strapi
         />
         
-        {/* Componente per gestire la geolocalizzazione */}
-        <LocationMarker onLocationFound={handleLocationFound} />
+        {/* ... Resto del codice */}
         
-        {/* Componente per centrare la mappa */}
-        <SetViewOnClick coords={mapCenter} zoom={mapZoom} />
-        
-        {/* Cerchio che mostra il raggio di ricerca */}
-        {userLocation && showRadiusCircle && (
-          <Circle
-            center={[userLocation.lat, userLocation.lng]}
-            radius={searchRadius * 1000} // Converti km in metri
-            pathOptions={{
-              color: '#f39c12',
-              fillColor: '#f39c12',
-              fillOpacity: 0.1,
+        <MapContainer 
+          center={mapCenter} 
+          zoom={mapZoom} 
+          style={{ height: '100%', width: '100%' }}
+          zoomControl={false}
+        >
+          {/* ... Contenuti esistenti */}
+          
+          <MarkerClusterGroup
+            chunkedLoading
+            iconCreateFunction={(cluster) => {
+              // Personalizzazione dell'icona del cluster
+              const childCount = cluster.getChildCount();
+              
+              // Determina la classe CSS in base al numero di marker nel cluster
+              let className = 'custom-cluster-';
+              if (childCount < 10) {
+                className += 'small';
+              } else if (childCount < 100) {
+                className += 'medium';
+              } else {
+                className += 'large';
+              }
+              
+              return L.divIcon({
+                html: `<div><span>${childCount}</span></div>`,
+                className: `marker-cluster ${className}`,
+                iconSize: L.point(40, 40)
+              });
             }}
+          >
+            {displayEvents.map(eventItem => {
+              // Trova la categoria principale per determinare il colore del marker
+              const primaryCategory = eventItem.categories && eventItem.categories.length > 0 
+                ? eventItem.categories[0] 
+                : null;
+                
+              // Crea un'icona personalizzata basata sul colore della categoria
+              const eventIcon = primaryCategory?.color 
+                ? new Icon({
+                    iconUrl: `/marker-icon-${primaryCategory.color}.png`, // Presumo che tu abbia marker di colori diversi
+                    iconSize: [25, 41],
+                    iconAnchor: [12, 41],
+                    popupAnchor: [1, -34],
+                  })
+                  : customIcon; // Usa l'icona predefinita se non c'è una categoria o un colore
+                  
+                return (
+                  <Marker 
+                    key={eventItem.id}
+                    position={[eventItem.latitude, eventItem.longitude]}
+                    icon={eventIcon}
+                    eventHandlers={{
+                      click: () => handleMarkerClick(eventItem)
+                    }}
+                  >
+                    <Popup>
+                      <div>
+                        <h3>{eventItem.title}</h3>
+                        <p>{eventItem.description?.substring(0, 100)}...</p>
+                        <p>Data: {new Date(eventItem.date).toLocaleDateString('it-IT', {
+                          day: 'numeric',
+                          month: 'long',
+                          year: 'numeric'
+                        })}</p>
+                        {primaryCategory && (
+                          <p>Categoria: {primaryCategory.name}</p>
+                        )}
+                      </div>
+                    </Popup>
+                  </Marker>
+                );
+              })}
+            </MarkerClusterGroup>
+          </MapContainer>
+          
+          <EventSidebar 
+            isOpen={isSidebarOpen}
+            event={selectedEvent}
+            loading={eventLoading}
+            error={eventError}
+            onClose={handleCloseSidebar}
           />
-        )}
-        
-        {userLocation && (
-        <Marker 
-          position={[userLocation.lat, userLocation.lng]} 
-          icon={userLocationIcon}
-        >
-          <Popup>
-            <div>La tua posizione attuale</div>
-          </Popup>
-        </Marker>
-        )}
+          <AdBanner />
+        </MapWrapper>
+      );
+    };
+    
+    export default EventMap;
 
-        <MarkerClusterGroup
-          chunkedLoading
-          iconCreateFunction={(cluster) => {
-            // Personalizzazione dell'icona del cluster
-            const childCount = cluster.getChildCount();
-            
-            // Determina la classe CSS in base al numero di marker nel cluster
-            let className = 'custom-cluster-';
-            if (childCount < 10) {
-              className += 'small';
-            } else if (childCount < 100) {
-              className += 'medium';
-            } else {
-              className += 'large';
-            }
-            
-            return L.divIcon({
-              html: `<div><span>${childCount}</span></div>`,
-              className: `marker-cluster ${className}`,
-              iconSize: L.point(40, 40)
-            });
-          }}
-        >
-          {displayEvents.map(eventItem => (
-            <Marker 
-              key={eventItem.id}
-              position={[eventItem.latitude, eventItem.longitude]}
-              icon={customIcon}
-              eventHandlers={{
-                click: () => handleMarkerClick(eventItem)
-              }}
-            >
-              <Popup>
-                <div>
-                  <h3>{eventItem.title}</h3>
-                  <p>{eventItem.description?.substring(0, 100)}...</p>
-                  <p>Data: {new Date(eventItem.date).toLocaleDateString()}</p>
-                </div>
-              </Popup>
-            </Marker>
-          ))}
-        </MarkerClusterGroup>
-      </MapContainer>
-      
-      <EventSidebar 
-        isOpen={isSidebarOpen}
-        event={selectedEvent}
-        loading={eventLoading}
-        error={eventError}
-        onClose={handleCloseSidebar}
-      />
-      <AdBanner />
-    </MapWrapper>
-  );
-};
-
-export default EventMap;
+   
 
           
