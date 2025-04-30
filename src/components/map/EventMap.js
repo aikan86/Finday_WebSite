@@ -204,19 +204,19 @@ const SearchSuggestions = styled.div`
 
 // Aggiungiamo un pulsante per la geolocalizzazione
 const LocationButton = styled.button`
-  position: absolute;
-  bottom: 90px; // Aumenta questo valore per posizionarlo sopra il banner (era 20px)
+  position: fixed; // Cambiato da 'absolute' a 'fixed' per assicurare la visualizzazione
+  bottom: 90px; // Sopra il banner
   right: 20px;
   width: 40px;
   height: 40px;
   background: white;
-  border: 1px solid #ccc;
+  border: 1px solid ${COLORS.border || '#ccc'};
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-  z-index: 1000;
+  z-index: 1500; // Aumentato il z-index per assicurarsi che sia sopra altri elementi
   cursor: pointer;
   font-size: 20px;
   
@@ -225,12 +225,15 @@ const LocationButton = styled.button`
   }
   
   @media (max-width: 768px) {
-    bottom: 80px; // Adatta per mobile
+    bottom: 80px; // Adattato per mobile
     right: 15px;
-    width: 45px;
-    height: 45px;
-    font-size: 22px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    width: 50px; // Leggermente più grande per essere più facile da toccare
+    height: 50px;
+    font-size: 24px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.2); // Ombra più pronunciata
+    background: ${COLORS.primary || '#f39c12'}; // Colore di sfondo distintivo
+    color: white; // Testo bianco per contrasto
+    border: none;
   }
 `;
 
