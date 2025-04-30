@@ -8,9 +8,9 @@ const SidebarContainer = styled.div`
   top: 0;
   right: ${props => props.isOpen ? '0' : '-400px'};
   width: 400px;
-  height: 100vh;
+  height: calc(100vh - 70px); // Sottrai l'altezza del banner (era 100vh)
   background: white;
-  box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+  box-shadow: -2px 0 10px rgba(0,0,0,0.1);
   z-index: 2000;
   overflow-y: auto;
   transition: right 0.3s ease;
@@ -20,6 +20,7 @@ const SidebarContainer = styled.div`
   
   @media (max-width: 768px) {
     width: 100%;
+    height: calc(100vh - 60px); // Adatta per mobile
     right: ${props => props.isOpen ? '0' : '-100%'};
   }
 `;

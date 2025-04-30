@@ -196,7 +196,7 @@ const SearchSuggestions = styled.div`
 // Aggiungiamo un pulsante per la geolocalizzazione
 const LocationButton = styled.button`
   position: absolute;
-  bottom: 20px;
+  bottom: 90px; // Aumenta questo valore per posizionarlo sopra il banner (era 20px)
   right: 20px;
   width: 40px;
   height: 40px;
@@ -216,7 +216,7 @@ const LocationButton = styled.button`
   }
   
   @media (max-width: 768px) {
-    bottom: 25px;
+    bottom: 80px; // Adatta per mobile
     right: 15px;
     width: 45px;
     height: 45px;

@@ -7,19 +7,20 @@ const BannerContainer = styled.div`
   bottom: 0;
   left: 0;
   right: 0;
-  height: 70px; // Altezza del banner
+  height: 70px;
   background-color: rgba(255, 255, 255, 0.9);
   border-top: 1px solid #e0e0e0;
-  z-index: 1500; // Sotto la sidebar ma sopra la mappa
+  z-index: 1800; // Sotto la sidebar (2000) ma sopra la mappa e altri controlli
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 0 20px;
   
   @media (max-width: 768px) {
-    height: 60px; // Leggermente più piccolo sui dispositivi mobili
+    height: 60px;
   }
 `;
+
 
 const AdPlaceholder = styled.div`
   width: 100%;

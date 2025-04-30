@@ -20,7 +20,8 @@ const GlobalStyles = createGlobalStyle`
 
   /* Riposiziona i controlli zoom sotto la barra sfumata */
   .leaflet-control-zoom {
-    margin-top: 80px !important;
+    margin-top: 90px !important;
+    margin-bottom: 90px !important; // Aggiungi questa riga per allontanarlo dal banner
   }
 
   .marker-cluster-small {
