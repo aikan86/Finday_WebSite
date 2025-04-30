@@ -12,11 +12,17 @@ import InfoBox from './InfoBox';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
 import L from 'leaflet';
+import AdBanner from '../common/AdBanner';
 
 const MapWrapper = styled.div`
   height: 100vh;
   width: 100%;
   position: relative;
+  padding-bottom: 70px; // Aggiungi padding-bottom uguale all'altezza del banner
+  
+  @media (max-width: 768px) {
+    padding-bottom: 60px; // Adatta per mobile
+  }
 `;
 
 const TopControlsContainer = styled.div`
@@ -782,6 +788,7 @@ const EventMap = ({ events = [], onSearch }) => {
         error={eventError}
         onClose={handleCloseSidebar}
       />
+      <AdBanner />
     </MapWrapper>
   );
 };
