@@ -1,20 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 
-const InfoContainer = styled.div`
-  position: absolute;
-  bottom: 20px;
-  left: 20px;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
-  padding: 15px;
-  width: 280px;
-  z-index: 1000;
-`;
+import { COLORS } from '../../styles/Colors';
 
 const InfoTitle = styled.h3`
-  color: #801054;
+  color: ${COLORS.secondary};
   font-size: 16px;
   margin: 0 0 10px 0;
   font-weight: bold;
@@ -24,7 +14,30 @@ const InfoText = styled.p`
   font-size: 14px;
   line-height: 1.4;
   margin: 0 0 10px 0;
-  color: #333;
+  color: ${COLORS.text};
+`;
+
+const InfoHighlight = styled.span`
+  color: ${COLORS.secondary};
+  font-weight: bold;
+`;
+
+
+const InfoContainer = styled.div`
+  position: absolute;
+  bottom: 90px; // Alzato per essere sopra il banner (era 20px)
+  left: 20px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
+  padding: 15px;
+  width: 280px;
+  z-index: 1000;
+  display: ${props => props.isMobile ? 'none' : 'block'};
+  
+  @media (max-width: 768px) {
+    bottom: 80px; // Adatta per mobile
+  }
 `;
 
 const CloseButton = styled.button`
@@ -40,11 +53,6 @@ const CloseButton = styled.button`
   &:hover {
     color: #666;
   }
-`;
-
-const InfoHighlight = styled.span`
-  color: #801054;
-  font-weight: bold;
 `;
 
 const InfoBox = ({ isMobile }) => {

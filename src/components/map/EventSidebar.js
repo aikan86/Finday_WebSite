@@ -2,7 +2,91 @@ import React from 'react';
 import styled from 'styled-components';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
+import { COLORS } from '../../styles/Colors';
 
+const CloseButton = styled.button`
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: #f1f1f1;
+  border: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  cursor: pointer;
+  color: ${COLORS.text};
+  z-index: 2001;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  
+    &:hover {
+    background: #e0e0e0;
+    color: ${COLORS.primary};
+  }
+`;
+
+const EventTitle = styled.h2`
+  font-size: 24px;
+  margin: 0 0 10px 0;
+  padding-right: 30px;
+  color: ${COLORS.text};
+`;
+
+const EventDate = styled.div`
+  font-size: 16px;
+  color: ${COLORS.textLight};
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 8px;
+`;
+
+const EventLocation = styled.div`
+  font-size: 16px;
+  color: ${COLORS.textLight};
+  display: flex;
+  align-items: center;
+  gap: 5px;
+`;
+
+const CategoryTag = styled.span`
+  background: ${COLORS.backgroundLight};
+  color: ${COLORS.secondary};
+  padding: 5px 10px;
+  border-radius: 15px;
+  font-size: 13px;
+  border: 1px solid ${COLORS.border};
+`;
+
+const InfoTitle = styled.h3`
+  font-size: 18px;
+  margin: 0 0 15px 0;
+  color: ${COLORS.secondary};
+`;
+
+const DirectionsButton = styled.a`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: ${COLORS.secondary};
+  color: white;
+  text-decoration: none;
+  padding: 10px 15px;
+  border-radius: 4px;
+  margin-top: 15px;
+  font-weight: 500;
+  transition: background 0.3s;
+  
+  &:hover {
+    background: ${COLORS.secondaryLight};
+  }
+`;
+
+  
 const SidebarContainer = styled.div`
   position: fixed;
   top: 0;
@@ -47,37 +131,6 @@ const SidebarFooter = styled.div`
   justify-content: space-between;
 `;
 
-const CloseButton = styled.button`
-  position: absolute;
-  top: 15px;
-  right: 15px;
-  background: #f1f1f1;
-  border: none;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 20px;
-  cursor: pointer;
-  color: #333;
-  z-index: 2001;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  
-  &:hover {
-    background: #e0e0e0;
-  }
-  
-  @media (max-width: 768px) {
-    top: 10px;
-    right: 10px;
-    width: 40px;
-    height: 40px;
-    font-size: 22px;
-  }
-`;
-
 const SidebarOverlay = styled.div`
   position: fixed;
   top: 0;
@@ -93,30 +146,6 @@ const SidebarOverlay = styled.div`
   }
 `;
 
-const EventTitle = styled.h2`
-  font-size: 24px;
-  margin: 0 0 10px 0;
-  padding-right: 30px;
-  color: #333;
-`;
-
-const EventDate = styled.div`
-  font-size: 16px;
-  color: #666;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  margin-bottom: 8px;
-`;
-
-const EventLocation = styled.div`
-  font-size: 16px;
-  color: #666;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-`;
-
 const EventDescription = styled.div`
   margin: 20px 0;
   line-height: 1.6;
@@ -130,24 +159,10 @@ const CategoryTags = styled.div`
   margin-top: 15px;
 `;
 
-const CategoryTag = styled.span`
-  background: #f5f5f5;
-  color: #333;
-  padding: 5px 10px;
-  border-radius: 15px;
-  font-size: 13px;
-`;
-
 const InfoSection = styled.div`
   margin: 25px 0;
   border-top: 1px solid #f0f0f0;
   padding-top: 20px;
-`;
-
-const InfoTitle = styled.h3`
-  font-size: 18px;
-  margin: 0 0 15px 0;
-  color: #333;
 `;
 
 const InfoItem = styled.div`
@@ -157,25 +172,6 @@ const InfoItem = styled.div`
     display: block;
     margin-bottom: 5px;
     color: #666;
-  }
-`;
-
-const DirectionsButton = styled.a`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  background: #4285F4;
-  color: white;
-  text-decoration: none;
-  padding: 10px 15px;
-  border-radius: 4px;
-  margin-top: 15px;
-  font-weight: 500;
-  transition: background 0.3s;
-  
-  &:hover {
-    background: #3367D6;
   }
 `;
 
