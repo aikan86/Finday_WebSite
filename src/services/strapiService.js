@@ -5,7 +5,7 @@ const API_URL = 'https://finday-cms.onrender.com/api';
 
 export const fetchEvents = async () => {
   try {
-    const response = await axios.get(`${API_URL}/events`, {
+    const response = await axios.get(`${API_URL}/eventis`, {
       params: {
         populate: '*',
       }
